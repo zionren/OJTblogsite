@@ -569,7 +569,8 @@ app.get('/post/:slug', (req, res) => {
 
 // Initialize database and start server
 initializeDatabase().then(() => {
-    app.listen(PORT, () => {
-        console.log(`Server running on port ${PORT}`);
+    const host = process.env.NODE_ENV === 'production' ? undefined : 'localhost';
+    app.listen(PORT, host, () => {
+        console.log(`Server running on ${host ? `http://${host}:${PORT}` : `port ${PORT}`}`);
     });
 });
