@@ -47,16 +47,34 @@ const db = drizzle(client);
 
 // Middleware
 app.set('trust proxy', 1); // Trust first proxy for rate limiting
-app.use(cors());
+app.use(cors({
+    origin: true,
+    credentials: true
+}));
 app.use(express.json({ limit: '10mb' }));
 app.use(express.static('public'));
 app.use('/attached_assets', express.static('attached_assets'));
-app.use(rateLimit({
-    windowMs: 15 * 60 * 1000, // 15 minutes
-    max: 100, // limit each IP to 100 requests per windowMs
-    standardHeaders: true,
-    legacyHeaders: false
-}));
+
+// More lenient rate limiting for production
+const rateLimitConfig = process.env.NODE_ENV === 'production' 
+    ? {
+        windowMs: 15 * 60 * 1000, // 15 minutes
+        max: 1000, // Higher limit for production
+        standardHeaders: true,
+        legacyHeaders: false,
+        skip: (req) => {
+            // Skip rate limiting for admin API calls
+            return req.path.startsWith('/api/analytics') || req.path.startsWith('/api/posts') && req.method === 'GET';
+        }
+    }
+    : {
+        windowMs: 15 * 60 * 1000, // 15 minutes
+        max: 100, // Lower limit for development
+        standardHeaders: true,
+        legacyHeaders: false
+    };
+
+app.use(rateLimit(rateLimitConfig));
 
 // JWT middleware
 const authenticateToken = (req, res, next) => {
@@ -287,6 +305,7 @@ app.post('/api/auth/login', async (req, res) => {
 // Posts API
 app.get('/api/posts', async (req, res) => {
     try {
+        console.log('Posts API called with query:', req.query);
         const { page = 1, limit = 10, published = true } = req.query;
         const offset = (page - 1) * limit;
         
@@ -301,15 +320,18 @@ app.get('/api/posts', async (req, res) => {
         
         const totalResult = await totalQuery;
         
-        res.json({
+        const response = {
             posts: postsResult,
             total: parseInt(totalResult[0].total),
             page: parseInt(page),
             totalPages: Math.ceil(totalResult[0].total / limit)
-        });
+        };
+        
+        console.log('Posts API response:', { postsCount: postsResult.length, total: response.total });
+        res.json(response);
     } catch (error) {
         console.error('Get posts error:', error);
-        res.status(500).json({ error: 'Internal server error' });
+        res.status(500).json({ error: 'Internal server error', details: error.message });
     }
 });
 
@@ -456,6 +478,7 @@ app.post('/api/posts/:id/comments', async (req, res) => {
 // Analytics API
 app.get('/api/analytics/dashboard', authenticateToken, async (req, res) => {
     try {
+        console.log('Analytics API called by user:', req.user?.email);
         const { startDate, endDate } = req.query;
         
         let dateFilter = '';
@@ -510,16 +533,23 @@ app.get('/api/analytics/dashboard', authenticateToken, async (req, res) => {
             WHERE event_type = 'post_view'
         `;
 
-        res.json({
+        const response = {
             totalVisits: parseInt(totalVisits[0].count),
             mostViewed,
             mostWatched,
             dailyAnalytics,
             avgTimeSpent: Math.round(avgTimeSpent[0].avg_seconds || 0)
+        };
+        
+        console.log('Analytics API response:', { 
+            totalVisits: response.totalVisits, 
+            mostViewedCount: response.mostViewed.length 
         });
+        
+        res.json(response);
     } catch (error) {
         console.error('Analytics dashboard error:', error);
-        res.status(500).json({ error: 'Internal server error' });
+        res.status(500).json({ error: 'Internal server error', details: error.message });
     }
 });
 
