@@ -263,31 +263,6 @@ Easy-to-use admin interface for:
 This project proves that vanilla JavaScript is still powerful and relevant in modern web development!', 'https://www.youtube.com/watch?v=hdI2bqOjy3c', true, 'building-this-blog-technical-deep-dive', 67)
             `;
             console.log('Sample posts created successfully');
-            
-            // Add sample analytics data for the chart
-            const existingAnalytics = await client`SELECT COUNT(*) as count FROM analytics`;
-            if (parseInt(existingAnalytics[0].count) === 0) {
-                // Generate sample analytics data for the last 30 days
-                for (let i = 29; i >= 0; i--) {
-                    const date = new Date();
-                    date.setDate(date.getDate() - i);
-                    
-                    // Generate random number of visits (1-15 per day)
-                    const visitsCount = Math.floor(Math.random() * 15) + 1;
-                    
-                    for (let j = 0; j < visitsCount; j++) {
-                        const timestamp = new Date(date);
-                        timestamp.setHours(Math.floor(Math.random() * 24));
-                        timestamp.setMinutes(Math.floor(Math.random() * 60));
-                        
-                        await client`
-                            INSERT INTO analytics (event_type, post_id, session_id, timestamp) 
-                            VALUES ('post_view', ${Math.floor(Math.random() * 4) + 1}, ${'sample_session_' + j}, ${timestamp.toISOString()})
-                        `;
-                    }
-                }
-                console.log('Sample analytics data created successfully');
-            }
         }
 
         console.log('Database initialized successfully');
