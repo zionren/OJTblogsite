@@ -17,11 +17,20 @@ class AuthManager {
         if (this.token && this.isTokenValid()) {
             loginContainer.style.display = 'none';
             adminDashboard.style.display = 'block';
+            // Initialize admin dashboard after authentication is confirmed
+            this.initializeAdminDashboard();
         } else {
             loginContainer.style.display = 'flex';
             adminDashboard.style.display = 'none';
             this.token = null;
             localStorage.removeItem('admin_token');
+        }
+    }
+
+    initializeAdminDashboard() {
+        // Only initialize the admin dashboard if it hasn't been initialized yet
+        if (!window.adminDashboard) {
+            window.adminDashboard = new AdminDashboard();
         }
     }
 

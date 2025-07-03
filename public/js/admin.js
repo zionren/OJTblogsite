@@ -10,8 +10,17 @@ class AdminDashboard {
 
     init() {
         this.setupEventListeners();
-        this.loadAnalytics();
-        this.loadPosts();
+        
+        // Only load data if we have a token
+        if (this.token) {
+            // Add a small delay to ensure the page is fully loaded
+            setTimeout(() => {
+                this.loadAnalytics();
+                this.loadPosts();
+            }, 100);
+        } else {
+            console.warn('No admin token found, skipping data load');
+        }
     }
 
     setupEventListeners() {
@@ -65,40 +74,69 @@ class AdminDashboard {
 
         this.currentTab = tabName;
 
-        // Load tab-specific data
-        if (tabName === 'analytics') {
-            this.loadAnalytics();
-        } else if (tabName === 'posts') {
-            this.loadPosts();
+        // Load tab-specific data only if we have a valid token
+        if (this.token && this.isTokenValid()) {
+            if (tabName === 'analytics') {
+                this.loadAnalytics();
+            } else if (tabName === 'posts') {
+                this.loadPosts();
+            }
         }
     }
 
     async loadAnalytics() {
+        if (!this.token) {
+            console.warn('No token available for analytics');
+            return;
+        }
+
+        // Double-check token validity before making API calls
+        if (!this.isTokenValid()) {
+            console.warn('Token is invalid, redirecting to login');
+            localStorage.removeItem('admin_token');
+            window.location.reload();
+            return;
+        }
+
         try {
-            const startDate = document.getElementById('start-date').value;
-            const endDate = document.getElementById('end-date').value;
+            const startDate = document.getElementById('start-date')?.value || '';
+            const endDate = document.getElementById('end-date')?.value || '';
             
             let url = '/api/analytics/dashboard';
             if (startDate && endDate) {
                 url += `?startDate=${startDate}&endDate=${endDate}`;
             }
 
+            console.log('Loading analytics from:', url);
+
             const response = await fetch(url, {
                 headers: {
-                    'Authorization': `Bearer ${this.token}`
+                    'Authorization': `Bearer ${this.token}`,
+                    'Content-Type': 'application/json'
                 }
             });
 
+            console.log('Analytics response status:', response.status);
+
             if (!response.ok) {
-                throw new Error('Failed to load analytics');
+                if (response.status === 401 || response.status === 403) {
+                    console.error('Authentication failed, redirecting to login');
+                    localStorage.removeItem('admin_token');
+                    window.location.reload();
+                    return;
+                }
+                const errorData = await response.text();
+                console.error('Analytics API error:', response.status, errorData);
+                throw new Error(`Failed to load analytics: ${response.status} ${response.statusText}`);
             }
 
             const data = await response.json();
+            console.log('Analytics data received:', data);
             this.renderAnalytics(data);
 
         } catch (error) {
             console.error('Error loading analytics:', error);
-            this.showError('Failed to load analytics data');
+            this.showError('Failed to load analytics data. Please try refreshing the page.');
         }
     }
 
@@ -243,6 +281,19 @@ class AdminDashboard {
     }
 
     async loadPosts() {
+        if (!this.token) {
+            console.warn('No token available for posts');
+            return;
+        }
+
+        // Double-check token validity before making API calls
+        if (!this.isTokenValid()) {
+            console.warn('Token is invalid, redirecting to login');
+            localStorage.removeItem('admin_token');
+            window.location.reload();
+            return;
+        }
+
         try {
             const response = await fetch('/api/posts?published=false', {
                 headers: {
@@ -251,6 +302,12 @@ class AdminDashboard {
             });
 
             if (!response.ok) {
+                if (response.status === 401 || response.status === 403) {
+                    console.error('Authentication failed, redirecting to login');
+                    localStorage.removeItem('admin_token');
+                    window.location.reload();
+                    return;
+                }
                 throw new Error('Failed to load posts');
             }
 
@@ -434,9 +491,25 @@ class AdminDashboard {
         console.log(message);
         alert(message);
     }
+
+    isTokenValid() {
+        if (!this.token) return false;
+        
+        try {
+            const payload = JSON.parse(atob(this.token.split('.')[1]));
+            const now = Date.now() / 1000;
+            return payload.exp > now;
+        } catch (error) {
+            return false;
+        }
+    }
 }
 
-// Initialize admin dashboard when DOM is loaded
+// Make AdminDashboard available globally
+window.AdminDashboard = AdminDashboard;
+
+// Initialize admin dashboard when DOM is loaded - but only after authentication
+// This will be called by the AuthManager when authentication is confirmed
 document.addEventListener('DOMContentLoaded', () => {
-    window.adminDashboard = new AdminDashboard();
+    // Don't initialize here - let auth.js handle initialization after login
 });

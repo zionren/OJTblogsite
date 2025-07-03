@@ -11,11 +11,20 @@
 In Vercel project settings, add these environment variables:
 
 ```
-DATABASE_URL=your_supabase_postgresql_url
-JWT_SECRET=your_jwt_secret_key
+DATABASE_URL=your_postgresql_database_url
 ADMIN_EMAIL=your_admin_email
-ADMIN_PASSWORD=your_admin_password
+ADMIN_PASSWORD=your_secure_admin_password
+NODE_ENV=production
+JWT_SECRET=your_secure_jwt_secret_key
+DEFAULT_THEME=light
+ANALYTICS_ENABLED=true
+TRACK_USER_AGENTS=true
+TRACK_IP_ADDRESSES=false
+COMMENTS_ENABLED=true
+COMMENT_MODERATION=false
 ```
+
+**Important:** Make sure to set `NODE_ENV=production` in Vercel!
 
 ### Step 3: Deploy
 - Vercel will automatically deploy using the `vercel.json` configuration
