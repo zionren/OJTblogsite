@@ -2,6 +2,20 @@
 .admin-container {
     min-height: 100vh;
     background-color: var(--background-color);
+    background-image: 
+        linear-gradient(rgba(248, 249, 250, 0.85), rgba(248, 249, 250, 0.85)),
+        var(--bg-image);
+    background-size: cover;
+    background-attachment: fixed;
+    background-position: center;
+    background-repeat: no-repeat;
+}
+
+/* Dark theme background overlay for admin */
+[data-theme="dark"] .admin-container {
+    background-image: 
+        linear-gradient(rgba(44, 62, 80, 0.9), rgba(44, 62, 80, 0.9)),
+        var(--bg-image);
 }
 
 /* Login form */
@@ -11,6 +25,7 @@
     align-items: center;
     min-height: 100vh;
     padding: 2rem;
+    background-image: inherit; /* Inherit from parent admin-container */
 }
 
 .login-form {
@@ -32,6 +47,7 @@
 /* Admin dashboard */
 .admin-dashboard {
     min-height: 100vh;
+    background: transparent; /* Let parent background show through */
 }
 
 .admin-header {
