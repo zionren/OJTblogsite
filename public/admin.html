@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard - Blog Site</title>
+    <link rel="stylesheet" href="/css/styles.css">
+    <link rel="stylesheet" href="/css/admin.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <div class="admin-container">
+        <!-- Login Form -->
+        <div class="login-container" id="login-container">
+            <div class="login-form">
+                <h2>Admin Login</h2>
+                <form id="login-form">
+                    <div class="form-group">
+                        <label for="email">Email:</label>
+                        <input type="email" id="email" name="email" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="password">Password:</label>
+                        <input type="password" id="password" name="password" required>
+                    </div>
+                    <button type="submit" class="btn-primary">Login</button>
+                </form>
+                <div class="error-message" id="login-error" style="display: none;"></div>
+            </div>
+        </div>
+
+        <!-- Admin Dashboard -->
+        <div class="admin-dashboard" id="admin-dashboard" style="display: none;">
+            <header class="admin-header">
+                <div class="admin-header-content">
+                    <h1>
+                        <i class="fas fa-stethoscope stethoscope-logo"></i>
+                        Admin Dashboard
+                    </h1>
+                    <div class="admin-nav">
+                        <button id="theme-toggle" class="theme-toggle" title="Toggle theme">
+                            <i class="fas fa-moon"></i>
+                        </button>
+                        <a href="/" class="btn-secondary">View Site</a>
+                        <button id="logout-btn" class="btn-danger">Logout</button>
+                    </div>
+                </div>
+            </header>
+
+            <div class="admin-content">
+                <div class="admin-tabs">
+                    <button class="tab-btn active" data-tab="analytics">Analytics</button>
+                    <button class="tab-btn" data-tab="posts">Posts</button>
+                    <button class="tab-btn" data-tab="create-post">Create Post</button>
+                </div>
+
+                <!-- Analytics Tab -->
+                <div class="tab-content active" id="analytics-tab">
+                    <div class="analytics-filters">
+                        <div class="filter-group">
+                            <label for="start-date">Start Date:</label>
+                            <input type="date" id="start-date">
+                        </div>
+                        <div class="filter-group">
+                            <label for="end-date">End Date:</label>
+                            <input type="date" id="end-date">
+                        </div>
+                        <button id="apply-filters" class="btn-primary">Apply Filters</button>
+                    </div>
+
+                    <div class="analytics-grid">
+                        <div class="stat-card">
+                            <h3>Total Visits</h3>
+                            <div class="stat-value" id="total-visits">0</div>
+                        </div>
+                        <div class="stat-card">
+                            <h3>Average Time Spent</h3>
+                            <div class="stat-value" id="avg-time">0s</div>
+                        </div>
+                        <div class="stat-card">
+                            <h3>Total Posts</h3>
+                            <div class="stat-value" id="total-posts">0</div>
+                        </div>
+                        <div class="stat-card">
+                            <h3>Total Comments</h3>
+                            <div class="stat-value" id="total-comments">0</div>
+                        </div>
+                    </div>
+
+                    <div class="charts-grid">
+                        <div class="chart-container">
+                            <h3>Most Read Posts vs Most Watched Videos</h3>
+                            <canvas id="posts-vs-videos-chart"></canvas>
+                        </div>
+                        <div class="chart-container">
+                            <h3>Daily Visits (Last 30 Days)</h3>
+                            <canvas id="daily-visits-chart"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Posts Tab -->
+                <div class="tab-content" id="posts-tab">
+                    <div class="posts-header">
+                        <h2>Manage Posts</h2>
+                        <button id="refresh-posts" class="btn-secondary">Refresh</button>
+                    </div>
+                    <div class="posts-table-container">
+                        <table class="posts-table">
+                            <thead>
+                                <tr>
+                                    <th>Title</th>
+                                    <th>Views</th>
+                                    <th>Published</th>
+                                    <th>Created</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="posts-table-body">
+                                <!-- Posts will be loaded here -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Create Post Tab -->
+                <div class="tab-content" id="create-post-tab">
+                    <div class="post-form-container">
+                        <h2 id="post-form-title">Create New Post</h2>
+                        <form id="post-form">
+                            <div class="form-group">
+                                <label for="post-title">Title:</label>
+                                <input type="text" id="post-title" name="title" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="post-content">Content:</label>
+                                <textarea id="post-content" name="content" rows="10" required></textarea>
+                            </div>
+                            <div class="form-group">
+                                <label for="post-youtube-url">YouTube URL (optional):</label>
+                                <input type="url" id="post-youtube-url" name="youtube_url" placeholder="https://www.youtube.com/watch?v=...">
+                            </div>
+                            <div class="form-group">
+                                <label class="checkbox-label">
+                                    <input type="checkbox" id="post-published" name="published" checked>
+                                    Published
+                                </label>
+                            </div>
+                            <div class="form-actions">
+                                <button type="submit" class="btn-primary" id="submit-post">Create Post</button>
+                                <button type="button" class="btn-secondary" id="cancel-edit" style="display: none;">Cancel</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="/js/theme.js"></script>
+    <script src="/js/auth.js"></script>
+    <script src="/js/admin.js"></script>
+</body>
+</html>

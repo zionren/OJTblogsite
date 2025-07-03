@@ -1,0 +1,442 @@
+// Admin dashboard functionality
+class AdminDashboard {
+    constructor() {
+        this.token = localStorage.getItem('admin_token');
+        this.currentTab = 'analytics';
+        this.editingPostId = null;
+        this.charts = {};
+        this.init();
+    }
+
+    init() {
+        this.setupEventListeners();
+        this.loadAnalytics();
+        this.loadPosts();
+    }
+
+    setupEventListeners() {
+        // Tab switching
+        document.querySelectorAll('.tab-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const tabName = e.target.dataset.tab;
+                this.switchTab(tabName);
+            });
+        });
+
+        // Logout
+        document.getElementById('logout-btn').addEventListener('click', () => {
+            this.logout();
+        });
+
+        // Analytics filters
+        document.getElementById('apply-filters').addEventListener('click', () => {
+            this.loadAnalytics();
+        });
+
+        // Post form
+        document.getElementById('post-form').addEventListener('submit', (e) => {
+            e.preventDefault();
+            this.savePost();
+        });
+
+        // Cancel edit
+        document.getElementById('cancel-edit').addEventListener('click', () => {
+            this.cancelEdit();
+        });
+
+        // Refresh posts
+        document.getElementById('refresh-posts').addEventListener('click', () => {
+            this.loadPosts();
+        });
+    }
+
+    switchTab(tabName) {
+        // Update active tab button
+        document.querySelectorAll('.tab-btn').forEach(btn => {
+            btn.classList.remove('active');
+        });
+        document.querySelector(`[data-tab="${tabName}"]`).classList.add('active');
+
+        // Update active tab content
+        document.querySelectorAll('.tab-content').forEach(content => {
+            content.classList.remove('active');
+        });
+        document.getElementById(`${tabName}-tab`).classList.add('active');
+
+        this.currentTab = tabName;
+
+        // Load tab-specific data
+        if (tabName === 'analytics') {
+            this.loadAnalytics();
+        } else if (tabName === 'posts') {
+            this.loadPosts();
+        }
+    }
+
+    async loadAnalytics() {
+        try {
+            const startDate = document.getElementById('start-date').value;
+            const endDate = document.getElementById('end-date').value;
+            
+            let url = '/api/analytics/dashboard';
+            if (startDate && endDate) {
+                url += `?startDate=${startDate}&endDate=${endDate}`;
+            }
+
+            const response = await fetch(url, {
+                headers: {
+                    'Authorization': `Bearer ${this.token}`
+                }
+            });
+
+            if (!response.ok) {
+                throw new Error('Failed to load analytics');
+            }
+
+            const data = await response.json();
+            this.renderAnalytics(data);
+
+        } catch (error) {
+            console.error('Error loading analytics:', error);
+            this.showError('Failed to load analytics data');
+        }
+    }
+
+    renderAnalytics(data) {
+        // Update stat cards
+        document.getElementById('total-visits').textContent = data.totalVisits.toLocaleString();
+        document.getElementById('avg-time').textContent = `${data.avgTimeSpent}s`;
+        document.getElementById('total-posts').textContent = data.mostViewed.length;
+        document.getElementById('total-comments').textContent = '0'; // We'll calculate this separately
+
+        // Render charts
+        this.renderPostsVsVideosChart(data.mostViewed, data.mostWatched);
+        this.renderDailyVisitsChart(data.dailyAnalytics);
+    }
+
+    renderPostsVsVideosChart(mostViewed, mostWatched) {
+        const ctx = document.getElementById('posts-vs-videos-chart').getContext('2d');
+        
+        // Destroy existing chart if it exists
+        if (this.charts.postsVsVideos) {
+            this.charts.postsVsVideos.destroy();
+        }
+
+        const postLabels = mostViewed.slice(0, 5).map(post => post.title.substring(0, 20) + '...');
+        const postViews = mostViewed.slice(0, 5).map(post => post.views);
+        const videoLabels = mostWatched.slice(0, 5).map(video => video.title.substring(0, 20) + '...');
+        const videoPlays = mostWatched.slice(0, 5).map(video => video.play_count);
+
+        this.charts.postsVsVideos = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: [...postLabels, ...videoLabels],
+                datasets: [{
+                    label: 'Post Views',
+                    data: [...postViews, ...Array(videoLabels.length).fill(0)],
+                    backgroundColor: 'rgba(52, 152, 219, 0.8)',
+                    borderColor: 'rgba(52, 152, 219, 1)',
+                    borderWidth: 1
+                }, {
+                    label: 'Video Plays',
+                    data: [...Array(postLabels.length).fill(0), ...videoPlays],
+                    backgroundColor: 'rgba(231, 76, 60, 0.8)',
+                    borderColor: 'rgba(231, 76, 60, 1)',
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                indexAxis: 'y',
+                responsive: true,
+                maintainAspectRatio: false,
+                layout: {
+                    padding: 10
+                },
+                plugins: {
+                    legend: {
+                        labels: {
+                            color: getComputedStyle(document.documentElement).getPropertyValue('--text-color')
+                        }
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            color: getComputedStyle(document.documentElement).getPropertyValue('--text-color'),
+                            maxTicksLimit: 8
+                        },
+                        grid: {
+                            color: getComputedStyle(document.documentElement).getPropertyValue('--border-color')
+                        }
+                    },
+                    x: {
+                        beginAtZero: true,
+                        ticks: {
+                            color: getComputedStyle(document.documentElement).getPropertyValue('--text-color')
+                        },
+                        grid: {
+                            color: getComputedStyle(document.documentElement).getPropertyValue('--border-color')
+                        }
+                    }
+                }
+            }
+        });
+    }
+
+    renderDailyVisitsChart(dailyAnalytics) {
+        const ctx = document.getElementById('daily-visits-chart').getContext('2d');
+        
+        // Destroy existing chart if it exists
+        if (this.charts.dailyVisits) {
+            this.charts.dailyVisits.destroy();
+        }
+
+        const labels = dailyAnalytics.map(item => new Date(item.date).toLocaleDateString());
+        const visits = dailyAnalytics.map(item => item.visits);
+
+        this.charts.dailyVisits = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: 'Daily Visits',
+                    data: visits,
+                    borderColor: 'rgba(46, 204, 113, 1)',
+                    backgroundColor: 'rgba(46, 204, 113, 0.1)',
+                    borderWidth: 2,
+                    fill: true,
+                    tension: 0.4
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        labels: {
+                            color: getComputedStyle(document.documentElement).getPropertyValue('--text-color')
+                        }
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            color: getComputedStyle(document.documentElement).getPropertyValue('--text-color')
+                        },
+                        grid: {
+                            color: getComputedStyle(document.documentElement).getPropertyValue('--border-color')
+                        }
+                    },
+                    x: {
+                        ticks: {
+                            color: getComputedStyle(document.documentElement).getPropertyValue('--text-color')
+                        },
+                        grid: {
+                            color: getComputedStyle(document.documentElement).getPropertyValue('--border-color')
+                        }
+                    }
+                }
+            }
+        });
+    }
+
+    async loadPosts() {
+        try {
+            const response = await fetch('/api/posts?published=false', {
+                headers: {
+                    'Authorization': `Bearer ${this.token}`
+                }
+            });
+
+            if (!response.ok) {
+                throw new Error('Failed to load posts');
+            }
+
+            const data = await response.json();
+            this.renderPosts(data.posts);
+
+        } catch (error) {
+            console.error('Error loading posts:', error);
+            this.showError('Failed to load posts');
+        }
+    }
+
+    renderPosts(posts) {
+        const tableBody = document.getElementById('posts-table-body');
+        
+        if (posts.length === 0) {
+            tableBody.innerHTML = '<tr><td colspan="5" style="text-align: center;">No posts found</td></tr>';
+            return;
+        }
+
+        tableBody.innerHTML = posts.map(post => `
+            <tr>
+                <td>${this.escapeHtml(post.title)}</td>
+                <td>${post.views}</td>
+                <td>
+                    <span class="status-badge ${post.published ? 'status-published' : 'status-draft'}">
+                        ${post.published ? 'Published' : 'Draft'}
+                    </span>
+                </td>
+                <td>${this.formatDate(post.created_at)}</td>
+                <td class="post-actions">
+                    <button class="edit-btn" onclick="adminDashboard.editPost(${post.id})">
+                        <i class="fas fa-edit"></i> Edit
+                    </button>
+                    <button class="delete-btn" onclick="adminDashboard.deletePost(${post.id})">
+                        <i class="fas fa-trash"></i> Delete
+                    </button>
+                </td>
+            </tr>
+        `).join('');
+    }
+
+    async savePost() {
+        try {
+            const formData = new FormData(document.getElementById('post-form'));
+            const postData = {
+                title: formData.get('title'),
+                content: formData.get('content'),
+                youtube_url: formData.get('youtube_url') || null,
+                published: formData.get('published') === 'on'
+            };
+
+            const url = this.editingPostId ? `/api/posts/${this.editingPostId}` : '/api/posts';
+            const method = this.editingPostId ? 'PUT' : 'POST';
+
+            const response = await fetch(url, {
+                method,
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${this.token}`
+                },
+                body: JSON.stringify(postData)
+            });
+
+            if (!response.ok) {
+                throw new Error('Failed to save post');
+            }
+
+            this.showSuccess(this.editingPostId ? 'Post updated successfully' : 'Post created successfully');
+            this.resetPostForm();
+            this.loadPosts();
+
+        } catch (error) {
+            console.error('Error saving post:', error);
+            this.showError('Failed to save post');
+        }
+    }
+
+    async editPost(postId) {
+        try {
+            const response = await fetch(`/api/posts/id/${postId}`, {
+                headers: {
+                    'Authorization': `Bearer ${this.token}`
+                }
+            });
+
+            if (!response.ok) {
+                throw new Error('Failed to load post');
+            }
+
+            const post = await response.json();
+            
+            // Switch to create post tab
+            this.switchTab('create-post');
+            
+            // Fill form with post data
+            document.getElementById('post-title').value = post.title;
+            document.getElementById('post-content').value = post.content;
+            document.getElementById('post-youtube-url').value = post.youtube_url || '';
+            document.getElementById('post-published').checked = post.published;
+            
+            // Update form state
+            this.editingPostId = postId;
+            document.getElementById('post-form-title').textContent = 'Edit Post';
+            document.getElementById('submit-post').textContent = 'Update Post';
+            document.getElementById('cancel-edit').style.display = 'block';
+
+        } catch (error) {
+            console.error('Error loading post for edit:', error);
+            this.showError('Failed to load post for editing');
+        }
+    }
+
+    async deletePost(postId) {
+        if (!confirm('Are you sure you want to delete this post? This action cannot be undone.')) {
+            return;
+        }
+
+        try {
+            const response = await fetch(`/api/posts/${postId}`, {
+                method: 'DELETE',
+                headers: {
+                    'Authorization': `Bearer ${this.token}`
+                }
+            });
+
+            if (!response.ok) {
+                throw new Error('Failed to delete post');
+            }
+
+            this.showSuccess('Post deleted successfully');
+            this.loadPosts();
+
+        } catch (error) {
+            console.error('Error deleting post:', error);
+            this.showError('Failed to delete post');
+        }
+    }
+
+    cancelEdit() {
+        this.resetPostForm();
+    }
+
+    resetPostForm() {
+        document.getElementById('post-form').reset();
+        this.editingPostId = null;
+        document.getElementById('post-form-title').textContent = 'Create New Post';
+        document.getElementById('submit-post').textContent = 'Create Post';
+        document.getElementById('cancel-edit').style.display = 'none';
+        document.getElementById('post-published').checked = true;
+    }
+
+    logout() {
+        localStorage.removeItem('admin_token');
+        window.location.reload();
+    }
+
+    formatDate(dateString) {
+        const date = new Date(dateString);
+        return date.toLocaleDateString('en-US', {
+            year: 'numeric',
+            month: 'short',
+            day: 'numeric'
+        });
+    }
+
+    escapeHtml(text) {
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+
+    showError(message) {
+        // Simple error display - could be enhanced with a proper notification system
+        console.error(message);
+        alert(message);
+    }
+
+    showSuccess(message) {
+        // Simple success display - could be enhanced with a proper notification system
+        console.log(message);
+        alert(message);
+    }
+}
+
+// Initialize admin dashboard when DOM is loaded
+document.addEventListener('DOMContentLoaded', () => {
+    window.adminDashboard = new AdminDashboard();
+});
