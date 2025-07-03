@@ -44,6 +44,36 @@
     color: var(--primary-color);
 }
 
+/* Login footer with back to homepage link */
+.login-footer {
+    margin-top: 1.5rem;
+    text-align: center;
+    padding-top: 1rem;
+    border-top: 1px solid var(--border-color);
+}
+
+.back-to-home {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: var(--secondary-color);
+    text-decoration: none;
+    font-size: 0.9rem;
+    padding: 0.5rem 1rem;
+    border-radius: 0.25rem;
+    transition: var(--transition);
+}
+
+.back-to-home:hover {
+    color: var(--primary-color);
+    background-color: var(--surface-color);
+    text-decoration: none;
+}
+
+.back-to-home i {
+    font-size: 0.8rem;
+}
+
 /* Admin dashboard */
 .admin-dashboard {
     min-height: 100vh;
