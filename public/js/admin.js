@@ -255,8 +255,20 @@ class AdminDashboard {
             this.charts.dailyVisits.destroy();
         }
 
-        const labels = dailyAnalytics.map(item => new Date(item.date).toLocaleDateString());
-        const visits = dailyAnalytics.map(item => item.visits);
+        console.log('Daily analytics data:', dailyAnalytics);
+        
+        // Better date formatting and ensure we have data
+        const labels = dailyAnalytics.map(item => {
+            const date = new Date(item.date);
+            return date.toLocaleDateString('en-US', { 
+                month: 'short', 
+                day: 'numeric' 
+            });
+        });
+        const visits = dailyAnalytics.map(item => parseInt(item.visits) || 0);
+        
+        console.log('Chart labels:', labels);
+        console.log('Chart visits:', visits);
 
         this.charts.dailyVisits = new Chart(ctx, {
             type: 'line',
