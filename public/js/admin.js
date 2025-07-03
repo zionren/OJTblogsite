@@ -57,6 +57,15 @@ class AdminDashboard {
         document.getElementById('refresh-posts').addEventListener('click', () => {
             this.loadPosts();
         });
+
+        // Window resize handler for charts responsiveness
+        let resizeTimeout;
+        window.addEventListener('resize', () => {
+            clearTimeout(resizeTimeout);
+            resizeTimeout = setTimeout(() => {
+                this.resizeCharts();
+            }, 250);
+        });
     }
 
     switchTab(tabName) {
@@ -188,12 +197,22 @@ class AdminDashboard {
                 responsive: true,
                 maintainAspectRatio: false,
                 layout: {
-                    padding: 10
+                    padding: {
+                        top: 10,
+                        right: 10,
+                        bottom: 10,
+                        left: 10
+                    }
                 },
                 plugins: {
                     legend: {
+                        display: window.innerWidth > 480,
+                        position: window.innerWidth > 768 ? 'top' : 'bottom',
                         labels: {
-                            color: getComputedStyle(document.documentElement).getPropertyValue('--text-color')
+                            color: getComputedStyle(document.documentElement).getPropertyValue('--text-color'),
+                            font: {
+                                size: window.innerWidth > 768 ? 12 : 10
+                            }
                         }
                     }
                 },
@@ -202,7 +221,10 @@ class AdminDashboard {
                         beginAtZero: true,
                         ticks: {
                             color: getComputedStyle(document.documentElement).getPropertyValue('--text-color'),
-                            maxTicksLimit: 8
+                            maxTicksLimit: window.innerWidth > 768 ? 8 : 5,
+                            font: {
+                                size: window.innerWidth > 768 ? 11 : 9
+                            }
                         },
                         grid: {
                             color: getComputedStyle(document.documentElement).getPropertyValue('--border-color')
@@ -211,7 +233,10 @@ class AdminDashboard {
                     x: {
                         beginAtZero: true,
                         ticks: {
-                            color: getComputedStyle(document.documentElement).getPropertyValue('--text-color')
+                            color: getComputedStyle(document.documentElement).getPropertyValue('--text-color'),
+                            font: {
+                                size: window.innerWidth > 768 ? 11 : 9
+                            }
                         },
                         grid: {
                             color: getComputedStyle(document.documentElement).getPropertyValue('--border-color')
@@ -250,10 +275,23 @@ class AdminDashboard {
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
+                layout: {
+                    padding: {
+                        top: 10,
+                        right: 10,
+                        bottom: 10,
+                        left: 10
+                    }
+                },
                 plugins: {
                     legend: {
+                        display: window.innerWidth > 480,
+                        position: 'top',
                         labels: {
-                            color: getComputedStyle(document.documentElement).getPropertyValue('--text-color')
+                            color: getComputedStyle(document.documentElement).getPropertyValue('--text-color'),
+                            font: {
+                                size: window.innerWidth > 768 ? 12 : 10
+                            }
                         }
                     }
                 },
@@ -261,7 +299,11 @@ class AdminDashboard {
                     y: {
                         beginAtZero: true,
                         ticks: {
-                            color: getComputedStyle(document.documentElement).getPropertyValue('--text-color')
+                            color: getComputedStyle(document.documentElement).getPropertyValue('--text-color'),
+                            maxTicksLimit: window.innerWidth > 768 ? 6 : 4,
+                            font: {
+                                size: window.innerWidth > 768 ? 11 : 9
+                            }
                         },
                         grid: {
                             color: getComputedStyle(document.documentElement).getPropertyValue('--border-color')
@@ -269,7 +311,11 @@ class AdminDashboard {
                     },
                     x: {
                         ticks: {
-                            color: getComputedStyle(document.documentElement).getPropertyValue('--text-color')
+                            color: getComputedStyle(document.documentElement).getPropertyValue('--text-color'),
+                            maxTicksLimit: window.innerWidth > 768 ? 10 : 6,
+                            font: {
+                                size: window.innerWidth > 768 ? 11 : 9
+                            }
                         },
                         grid: {
                             color: getComputedStyle(document.documentElement).getPropertyValue('--border-color')
@@ -490,6 +536,38 @@ class AdminDashboard {
         // Simple success display - could be enhanced with a proper notification system
         console.log(message);
         alert(message);
+    }
+
+    resizeCharts() {
+        // Resize all existing charts
+        Object.values(this.charts).forEach(chart => {
+            if (chart && typeof chart.resize === 'function') {
+                chart.resize();
+                
+                // Update options for better mobile display
+                const isMobile = window.innerWidth <= 768;
+                const isSmallMobile = window.innerWidth <= 480;
+                
+                if (chart.options && chart.options.plugins && chart.options.plugins.legend) {
+                    chart.options.plugins.legend.display = !isSmallMobile;
+                    chart.options.plugins.legend.labels.font.size = isMobile ? 10 : 12;
+                }
+                
+                if (chart.options && chart.options.scales) {
+                    // Update tick limits based on screen size
+                    if (chart.options.scales.y && chart.options.scales.y.ticks) {
+                        chart.options.scales.y.ticks.maxTicksLimit = isMobile ? 4 : 6;
+                        chart.options.scales.y.ticks.font.size = isMobile ? 9 : 11;
+                    }
+                    if (chart.options.scales.x && chart.options.scales.x.ticks) {
+                        chart.options.scales.x.ticks.maxTicksLimit = isMobile ? 6 : 10;
+                        chart.options.scales.x.ticks.font.size = isMobile ? 9 : 11;
+                    }
+                }
+                
+                chart.update('resize');
+            }
+        });
     }
 
     isTokenValid() {
