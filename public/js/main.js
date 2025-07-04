@@ -88,10 +88,6 @@ class BlogApp {
                     <p class="post-card-excerpt">${this.createExcerpt(post.content)}</p>
                     <div class="post-card-actions">
                         <a href="/post/${post.slug}" class="read-more">Read More</a>
-                        <div class="post-stats">
-                            <span><i class="fas fa-eye"></i> ${post.views}</span>
-                            <span><i class="fas fa-comments"></i> ${post.comment_count || 0}</span>
-                        </div>
                     </div>
                 </div>
             </article>

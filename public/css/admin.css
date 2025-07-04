@@ -1,3 +1,9 @@
+/* Apply Filters button - smaller size */
+#apply-filters {
+    padding: 0.5rem 1rem;
+    font-size: 0.9rem;
+}
+
 /* Admin-specific styles */
 .admin-container {
     min-height: 100vh;
