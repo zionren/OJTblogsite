@@ -420,18 +420,113 @@
 .admin-sidebar {
     position: fixed;
     top: 0;
-    left: -280px;
+    left: -320px; /* Move further left to ensure complete hiding */
     width: 280px;
     height: 100%;
-    background-color: var(--surface-color);
+    background-color: var(--primary-color);
     border-right: 1px solid var(--border-color);
     z-index: 999;
-    transition: left 0.3s ease;
+    transition: left 0.3s ease, opacity 0.3s ease, visibility 0.3s ease;
     box-shadow: var(--shadow-lg);
+    overflow-y: auto;
 }
 
 .admin-sidebar.active {
     left: 0;
+}
+
+/* Additional safeguards to ensure admin sidebar is completely hidden */
+.admin-sidebar:not(.active) {
+    left: -320px !important;
+    visibility: hidden;
+    opacity: 0;
+}
+
+.admin-sidebar.active {
+    left: 0 !important;
+    visibility: visible;
+    opacity: 1;
+}
+
+/* Admin sidebar content styling */
+.admin-sidebar .sidebar-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1.5rem 1rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    background-color: rgba(255, 255, 255, 0.1);
+    color: white;
+}
+
+.admin-sidebar .sidebar-header h3 {
+    margin: 0;
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: white;
+}
+
+.admin-sidebar .sidebar-close {
+    background: none;
+    border: none;
+    color: white;
+    font-size: 1.2rem;
+    cursor: pointer;
+    padding: 0.25rem;
+    border-radius: 0.25rem;
+    transition: var(--transition);
+}
+
+.admin-sidebar .sidebar-close:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+}
+
+.admin-sidebar .sidebar-nav {
+    padding: 1rem 0;
+    background-color: var(--primary-color);
+}
+
+.admin-sidebar .sidebar-link {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.875rem 1.5rem;
+    color: rgba(255, 255, 255, 0.9);
+    text-decoration: none;
+    transition: var(--transition);
+    border: none;
+    background: none;
+    width: 100%;
+    text-align: left;
+    cursor: pointer;
+    font-size: 0.95rem;
+}
+
+.admin-sidebar .sidebar-link:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+    color: white;
+    text-decoration: none;
+}
+
+.admin-sidebar .sidebar-link.active {
+    background-color: rgba(255, 255, 255, 0.2);
+    color: white;
+    border-right: 3px solid var(--accent-color);
+}
+
+.admin-sidebar .sidebar-link.active:hover {
+    background-color: rgba(255, 255, 255, 0.2);
+    color: white;
+}
+
+.admin-sidebar .sidebar-link i {
+    width: 20px;
+    text-align: center;
+    font-size: 1rem;
+}
+
+.admin-sidebar .sidebar-link span {
+    flex: 1;
 }
 
 .admin-dashboard .admin-content {
@@ -439,11 +534,41 @@
     transition: margin-left 0.3s ease;
 }
 
+/* Dark theme admin sidebar styles */
+[data-theme="dark"] .admin-sidebar {
+    background-color: var(--primary-color);
+    border-right: 1px solid var(--border-color);
+}
+
+[data-theme="dark"] .admin-sidebar .sidebar-header {
+    background-color: rgba(0, 0, 0, 0.2);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+[data-theme="dark"] .admin-sidebar .sidebar-nav {
+    background-color: var(--primary-color);
+}
+
+[data-theme="dark"] .admin-sidebar .sidebar-link {
+    color: rgba(255, 255, 255, 0.9);
+}
+
+[data-theme="dark"] .admin-sidebar .sidebar-link:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+    color: white;
+}
+
+[data-theme="dark"] .admin-sidebar .sidebar-link.active {
+    background-color: rgba(255, 255, 255, 0.2);
+    color: white;
+}
+
 /* Admin desktop layout with sidebar */
 @media (min-width: 769px) {
     .admin-sidebar {
         /* Keep sidebar hidden until activated, even on desktop */
-        width: 300px;
+        left: -320px; /* Ensure it's positioned correctly */
+        width: 280px;
         box-shadow: var(--shadow-lg);
     }
     
