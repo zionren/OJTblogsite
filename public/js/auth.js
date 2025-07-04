@@ -42,6 +42,30 @@ class AuthManager {
                 this.handleLogin();
             });
         }
+
+        // Password toggle functionality
+        const passwordToggle = document.getElementById('password-toggle');
+        if (passwordToggle) {
+            passwordToggle.addEventListener('click', (e) => {
+                e.preventDefault();
+                this.togglePassword();
+            });
+        }
+    }
+
+    togglePassword() {
+        const passwordInput = document.getElementById('password');
+        const passwordToggleIcon = document.getElementById('password-toggle-icon');
+        
+        if (passwordInput.type === 'password') {
+            passwordInput.type = 'text';
+            passwordToggleIcon.classList.remove('fa-eye');
+            passwordToggleIcon.classList.add('fa-eye-slash');
+        } else {
+            passwordInput.type = 'password';
+            passwordToggleIcon.classList.remove('fa-eye-slash');
+            passwordToggleIcon.classList.add('fa-eye');
+        }
     }
 
     async handleLogin() {

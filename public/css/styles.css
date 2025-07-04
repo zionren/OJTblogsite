@@ -926,4 +926,33 @@ body {
     .main-nav .admin-link {
         display: none; /* Hide traditional nav links on mobile */
     }
+    
+    /* Left-align sidebar icons on mobile - Force override */
+    .sidebar-link i {
+        text-align: left !important;
+        width: auto !important;
+        min-width: 20px;
+        font-size: 1rem;
+        margin-right: 0.75rem !important;
+    }
+    
+    .sidebar-link {
+        justify-content: flex-start !important;
+        display: flex !important;
+    }
+    
+    .sidebar-link span {
+        text-align: left;
+    }
+}
+
+/* Extra small mobile devices */
+@media (max-width: 480px) {
+    .sidebar-link i {
+        text-align: left !important;
+        width: auto !important;
+        min-width: 18px;
+        font-size: 0.9rem;
+        margin-right: 0.5rem !important;
+    }
 }

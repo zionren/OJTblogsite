@@ -209,7 +209,7 @@ class AdminDashboard {
                         display: window.innerWidth > 480,
                         position: window.innerWidth > 768 ? 'top' : 'bottom',
                         labels: {
-                            color: getComputedStyle(document.documentElement).getPropertyValue('--text-color'),
+                            color: '#e74c3c', // Force red text for better visibility
                             font: {
                                 size: window.innerWidth > 768 ? 12 : 10
                             }
@@ -220,7 +220,7 @@ class AdminDashboard {
                     y: {
                         beginAtZero: true,
                         ticks: {
-                            color: getComputedStyle(document.documentElement).getPropertyValue('--text-color'),
+                            color: '#e74c3c', // Force red text for better visibility
                             maxTicksLimit: window.innerWidth > 768 ? 8 : 5,
                             font: {
                                 size: window.innerWidth > 768 ? 11 : 9
@@ -233,7 +233,7 @@ class AdminDashboard {
                     x: {
                         beginAtZero: true,
                         ticks: {
-                            color: getComputedStyle(document.documentElement).getPropertyValue('--text-color'),
+                            color: '#e74c3c', // Force red text for better visibility
                             font: {
                                 size: window.innerWidth > 768 ? 11 : 9
                             }
@@ -314,7 +314,7 @@ class AdminDashboard {
                         display: window.innerWidth > 480,
                         position: 'top',
                         labels: {
-                            color: getComputedStyle(document.documentElement).getPropertyValue('--text-color'),
+                            color: '#e74c3c', // Force red text for better visibility
                             font: {
                                 size: window.innerWidth > 768 ? 12 : 10
                             }
@@ -326,7 +326,7 @@ class AdminDashboard {
                         beginAtZero: true,
                         suggestedMax: Math.max(...visits) > 0 ? Math.max(...visits) + 2 : 10,
                         ticks: {
-                            color: getComputedStyle(document.documentElement).getPropertyValue('--text-color'),
+                            color: '#e74c3c', // Force red text for better visibility
                             maxTicksLimit: window.innerWidth > 768 ? 6 : 4,
                             stepSize: 1,
                             font: {
@@ -339,7 +339,7 @@ class AdminDashboard {
                     },
                     x: {
                         ticks: {
-                            color: getComputedStyle(document.documentElement).getPropertyValue('--text-color'),
+                            color: '#e74c3c', // Force red text for better visibility
                             maxTicksLimit: window.innerWidth > 768 ? 10 : 6,
                             maxRotation: 45,
                             font: {

@@ -22,7 +22,12 @@
                     </div>
                     <div class="form-group">
                         <label for="password">Password:</label>
-                        <input type="password" id="password" name="password" required>
+                        <div class="password-input-container">
+                            <input type="password" id="password" name="password" required>
+                            <button type="button" id="password-toggle" class="password-toggle-btn" title="Show/Hide Password">
+                                <i class="fas fa-eye" id="password-toggle-icon"></i>
+                            </button>
+                        </div>
                     </div>
                     <button type="submit" class="btn-primary">Login</button>
                 </form>
@@ -53,8 +58,6 @@
                         <button id="theme-toggle" class="theme-toggle" title="Toggle theme">
                             <i class="fas fa-moon"></i>
                         </button>
-                        <a href="/" class="btn-secondary">View Site</a>
-                        <button id="logout-btn" class="btn-danger">Logout</button>
                     </div>
                 </div>
             </header>
@@ -81,6 +84,19 @@
                         <i class="fas fa-plus"></i>
                         <span>Create Post</span>
                     </a>
+                    
+                    <!-- Divider -->
+                    <div class="sidebar-divider"></div>
+                    
+                    <!-- Navigation buttons -->
+                    <a href="/" class="sidebar-link sidebar-action">
+                        <i class="fas fa-external-link-alt"></i>
+                        <span>View Site</span>
+                    </a>
+                    <button id="logout-btn" class="sidebar-link sidebar-action logout-btn">
+                        <i class="fas fa-sign-out-alt"></i>
+                        <span>Logout</span>
+                    </button>
                 </nav>
             </aside>
 
