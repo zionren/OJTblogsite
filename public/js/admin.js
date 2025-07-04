@@ -24,11 +24,14 @@ class AdminDashboard {
     }
 
     setupEventListeners() {
-        // Tab switching
-        document.querySelectorAll('.tab-btn').forEach(btn => {
+        // Tab switching - only for elements with data-tab attribute
+        document.querySelectorAll('.tab-btn[data-tab]').forEach(btn => {
             btn.addEventListener('click', (e) => {
+                e.preventDefault();
                 const tabName = e.target.dataset.tab;
-                this.switchTab(tabName);
+                if (tabName) {
+                    this.switchTab(tabName);
+                }
             });
         });
 
@@ -69,11 +72,24 @@ class AdminDashboard {
     }
 
     switchTab(tabName) {
+        // Check if tabName is valid
+        if (!tabName) {
+            console.warn('switchTab called with invalid tabName:', tabName);
+            return;
+        }
+
         // Update active tab button
         document.querySelectorAll('.tab-btn').forEach(btn => {
             btn.classList.remove('active');
         });
-        document.querySelector(`[data-tab="${tabName}"]`).classList.add('active');
+        
+        const targetTab = document.querySelector(`[data-tab="${tabName}"]`);
+        if (targetTab) {
+            targetTab.classList.add('active');
+        } else {
+            console.warn('No element found with data-tab:', tabName);
+            return;
+        }
 
         // Update active tab content
         document.querySelectorAll('.tab-content').forEach(content => {
