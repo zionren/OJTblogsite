@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sidebar Test</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            font-family: Arial, sans-serif;
+        }
+        
+        .test-sidebar {
+            position: fixed;
+            top: 0;
+            left: -300px;
+            width: 280px;
+            height: 100%;
+            background-color: #2c3e50;
+            transition: left 0.3s ease;
+            z-index: 999;
+        }
+        
+        .test-sidebar.active {
+            left: 0;
+        }
+        
+        .test-sidebar-content {
+            padding: 20px;
+            color: white;
+        }
+        
+        .test-button {
+            padding: 10px 20px;
+            background-color: #3498db;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        
+        .test-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s ease;
+            z-index: 998;
+        }
+        
+        .test-overlay.active {
+            opacity: 1;
+            visibility: visible;
+        }
+    </style>
+</head>
+<body>
+    <h1>Sidebar Test</h1>
+    <button class="test-button" onclick="toggleSidebar()">Toggle Sidebar</button>
+    
+    <div class="test-overlay" id="overlay"></div>
+    <div class="test-sidebar" id="sidebar">
+        <div class="test-sidebar-content">
+            <h3>Test Sidebar</h3>
+            <p>This is a test to check sidebar visibility.</p>
+            <button class="test-button" onclick="closeSidebar()">Close</button>
+        </div>
+    </div>
+    
+    <script>
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            const overlay = document.getElementById('overlay');
+            sidebar.classList.toggle('active');
+            overlay.classList.toggle('active');
+        }
+        
+        function closeSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            const overlay = document.getElementById('overlay');
+            sidebar.classList.remove('active');
+            overlay.classList.remove('active');
+        }
+        
+        document.getElementById('overlay').addEventListener('click', closeSidebar);
+    </script>
+</body>
+</html>
