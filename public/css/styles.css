@@ -890,20 +890,18 @@ body {
 /* Desktop sidebar behavior */
 @media (min-width: 769px) {
     .sidebar-toggle {
-        display: block; /* Show toggle button on desktop for admin */
+        display: block; /* Show toggle button on desktop */
     }
     
     .sidebar {
-        position: relative;
-        left: 0;
-        width: 260px;
-        height: auto;
-        box-shadow: none;
-        border-right: 1px solid var(--border-color);
+        /* Keep sidebar hidden until activated */
+        width: 300px;
+        box-shadow: var(--shadow-lg);
     }
     
     .sidebar-overlay {
-        display: none;
+        /* Show overlay on desktop too */
+        display: block;
     }
 }
 

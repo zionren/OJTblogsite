@@ -442,23 +442,24 @@
 /* Admin desktop layout with sidebar */
 @media (min-width: 769px) {
     .admin-sidebar {
-        position: fixed;
-        left: 0;
-        top: 0;
-        height: 100vh;
-        box-shadow: none;
+        /* Keep sidebar hidden until activated, even on desktop */
+        width: 300px;
+        box-shadow: var(--shadow-lg);
     }
     
     .admin-sidebar-overlay {
-        display: none;
+        /* Show overlay on desktop too */
+        display: block;
     }
     
     .admin-dashboard .admin-content {
-        margin-left: 280px;
+        /* No margin by default - content takes full width */
+        margin-left: 0;
     }
     
     .admin-header .admin-header-content {
-        margin-left: 280px;
+        /* No margin by default */
+        margin-left: 0;
     }
 }
 

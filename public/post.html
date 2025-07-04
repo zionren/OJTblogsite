@@ -16,15 +16,41 @@
                     <a href="/">CSP131 | Adriaan Dimate's Blog</a>
                 </h1>
                 <nav class="main-nav">
-                    <a href="/about" class="nav-link">About</a>
                     <button id="theme-toggle" class="theme-toggle" title="Toggle theme">
                         <i class="fas fa-moon"></i>
                     </button>
-                    <a href="/admin" class="admin-link">Admin</a>
+                    <button id="sidebar-toggle" class="sidebar-toggle" title="Menu">
+                        <i class="fas fa-bars"></i>
+                    </button>
                 </nav>
             </div>
         </div>
     </header>
+
+    <!-- Sidebar Navigation -->
+    <div class="sidebar-overlay" id="sidebar-overlay"></div>
+    <aside class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <h3><i class="fas fa-stethoscope"></i> Navigation</h3>
+            <button class="sidebar-close" id="sidebar-close">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <nav class="sidebar-nav">
+            <a href="/" class="sidebar-link">
+                <i class="fas fa-home"></i>
+                <span>Home</span>
+            </a>
+            <a href="/about" class="sidebar-link">
+                <i class="fas fa-user"></i>
+                <span>About</span>
+            </a>
+            <a href="/admin" class="sidebar-link">
+                <i class="fas fa-cog"></i>
+                <span>Admin</span>
+            </a>
+        </nav>
+    </aside>
 
     <main class="main-content">
         <div class="container">
@@ -94,6 +120,7 @@
     </footer>
 
     <script src="/js/theme.js"></script>
+    <script src="/js/sidebar.js"></script>
     <script src="/js/analytics.js"></script>
     <script src="/js/post.js"></script>
 </body>
