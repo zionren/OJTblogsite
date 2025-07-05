@@ -887,25 +887,25 @@ body {
 .sidebar {
     position: fixed;
     top: 0;
-    left: -300px; /* Move further left to ensure complete hiding */
+    right: -300px; /* Move to the right side when hidden */
     width: 280px;
     height: 100%;
     background-color: #2c3e50; /* Force dark blue background */
-    border-right: 1px solid #34495e;
+    border-left: 1px solid #34495e; /* Change to left border since it's on the right */
     z-index: 999;
-    transition: left 0.3s ease, opacity 0.3s ease, visibility 0.3s ease;
+    transition: right 0.3s ease, opacity 0.3s ease, visibility 0.3s ease; /* Change transition to 'right' */
     box-shadow: var(--shadow-lg);
     overflow-y: auto;
 }
 
 .sidebar:not(.active) {
-    left: -300px !important;
+    right: -300px !important; /* Hide on the right side */
     visibility: hidden;
     opacity: 0;
 }
 
 .sidebar.active {
-    left: 0 !important;
+    right: 0 !important; /* Slide in from the right */
     visibility: visible;
     opacity: 1;
 }
@@ -997,7 +997,7 @@ body {
     
     .sidebar {
         /* Keep sidebar hidden until activated */
-        left: -300px; /* Ensure it's positioned correctly */
+        right: -300px; /* Ensure it's positioned correctly on the right */
         width: 280px;
         box-shadow: var(--shadow-lg);
     }
