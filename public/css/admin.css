@@ -97,20 +97,28 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    max-width: 1200px;
+    max-width: 1600px; /* Further increased max-width */
     margin: 0 auto;
     padding: 0 20px;
+    width: 100%; /* Ensure full width usage */
 }
 
 .admin-header h1 {
     color: #e74c3c !important; /* Red text for better visibility */
     font-size: 1.8rem;
+    flex: 1; /* Take up remaining space */
+    margin-left: 1rem; /* Add some space after sidebar toggle */
+    text-align: left; /* Ensure text stays left-aligned */
+    margin-right: 6rem; /* Significantly increased space before the theme toggle */
 }
 
 .admin-nav {
     display: flex;
     align-items: center;
     gap: 1rem;
+    flex-shrink: 0; /* Prevent shrinking */
+    margin-left: auto; /* Push to the far right */
+    padding-right: 1rem; /* Add extra padding to push further right */
 }
 
 .admin-content {
@@ -877,6 +885,71 @@
     }
 }
 
+/* Large desktop screens optimization */
+@media (min-width: 1200px) {
+    .admin-header-content {
+        max-width: 1600px;
+        padding: 0 30px;
+    }
+    
+    .admin-header h1 {
+        margin-right: 8rem; /* Increased spacing for desktop */
+    }
+    
+    .admin-nav {
+        padding-right: 1.5rem;
+    }
+}
+
+/* Ultra-wide screens optimization */
+@media (min-width: 1600px) {
+    .admin-header-content {
+        max-width: 1800px;
+        padding: 0 40px;
+    }
+    
+    .admin-header h1 {
+        font-size: 2rem;
+        margin-right: 8rem; /* Even more space on ultra-wide screens */
+    }
+    
+    .admin-nav {
+        padding-right: 2rem; /* More padding on larger screens */
+    }
+}
+
+/* Extra-wide screens optimization */
+@media (min-width: 1920px) {
+    .admin-header-content {
+        max-width: 2000px;
+        padding: 0 60px;
+    }
+    
+    .admin-header h1 {
+        margin-right: 12rem; /* Maximum space on extra-wide screens */
+    }
+    
+    .admin-nav {
+        padding-right: 3rem; /* Maximum padding for extra-wide screens */
+    }
+}
+
+/* Ultra-extra-wide screens optimization */
+@media (min-width: 2560px) {
+    .admin-header-content {
+        max-width: 2400px;
+        padding: 0 80px;
+    }
+    
+    .admin-header h1 {
+        margin-right: 16rem; /* Extreme spacing for ultra-wide displays */
+    }
+    
+    .admin-nav {
+        padding-right: 4rem; /* Maximum padding for ultra-wide displays */
+    }
+}
+
 /* Admin desktop layout with sidebar */
 @media (min-width: 769px) {
     .admin-sidebar {
@@ -936,8 +1009,12 @@
     }
     
     .admin-header-content {
-        flex-direction: column;
-        gap: 1rem;
+        padding: 0 15px;
+    }
+    
+    .admin-header h1 {
+        font-size: 1.4rem;
+        margin-left: 0.5rem;
     }
     
     .admin-nav {

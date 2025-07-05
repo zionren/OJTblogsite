@@ -83,6 +83,9 @@ body {
     justify-content: space-between;
     align-items: center;
     padding: 1rem 0;
+    max-width: 1600px; /* Set max-width for large screens */
+    margin: 0 auto; /* Center the content */
+    width: 100%; /* Ensure full width usage */
 }
 
 .site-title {
@@ -92,6 +95,8 @@ body {
     display: flex;
     align-items: center;
     gap: 0.5rem;
+    flex: 1; /* Take up remaining space */
+    margin-right: 6rem; /* Add significant space before nav elements */
 }
 
 .stethoscope-logo {
@@ -108,6 +113,9 @@ body {
     display: flex;
     align-items: center;
     gap: 1rem;
+    flex-shrink: 0; /* Prevent shrinking */
+    margin-left: auto; /* Push to the far right */
+    padding-right: 1rem; /* Add extra padding to push further right */
 }
 
 .theme-toggle {
@@ -694,6 +702,72 @@ body {
     }
 }
 
+/* Header responsive design optimization */
+/* Large desktop screens optimization */
+@media (min-width: 1200px) {
+    .header-content {
+        max-width: 1600px;
+        padding: 1rem 30px;
+    }
+    
+    .site-title {
+        margin-right: 8rem; /* Increased spacing for desktop */
+    }
+    
+    .main-nav {
+        padding-right: 1.5rem;
+    }
+}
+
+/* Ultra-wide screens optimization */
+@media (min-width: 1600px) {
+    .header-content {
+        max-width: 1800px;
+        padding: 1rem 40px;
+    }
+    
+    .site-title {
+        font-size: 2.2rem;
+        margin-right: 8rem; /* Even more space on ultra-wide screens */
+    }
+    
+    .main-nav {
+        padding-right: 2rem; /* More padding on larger screens */
+    }
+}
+
+/* Extra-wide screens optimization */
+@media (min-width: 1920px) {
+    .header-content {
+        max-width: 2000px;
+        padding: 1rem 60px;
+    }
+    
+    .site-title {
+        margin-right: 12rem; /* Maximum space on extra-wide screens */
+    }
+    
+    .main-nav {
+        padding-right: 3rem; /* Maximum padding for extra-wide screens */
+    }
+}
+
+/* Ultra-extra-wide screens optimization */
+@media (min-width: 2560px) {
+    .header-content {
+        max-width: 2400px;
+        padding: 1rem 80px;
+    }
+    
+    .site-title {
+        margin-right: 16rem; /* Extreme spacing for ultra-wide displays */
+    }
+    
+    .main-nav {
+        padding-right: 4rem; /* Maximum padding for ultra-wide displays */
+    }
+}
+
 /* Responsive design */
 @media (max-width: 768px) {
     .container {
@@ -719,8 +793,16 @@ body {
     }
     
     .header-content {
-        flex-direction: column;
-        gap: 1rem;
+        padding: 1rem 15px;
+    }
+    
+    .site-title {
+        font-size: 1.6rem;
+        margin-right: 2rem; /* Reduced spacing for mobile */
+    }
+    
+    .main-nav {
+        padding-right: 0.5rem;
     }
     
     .post-meta {
@@ -737,8 +819,18 @@ body {
 }
 
 @media (max-width: 480px) {
+    .header-content {
+        padding: 1rem 10px;
+    }
+    
     .site-title {
         font-size: 1.5rem;
+        margin-right: 1rem; /* Minimal spacing for very small screens */
+    }
+    
+    .main-nav {
+        gap: 0.5rem;
+        padding-right: 0.25rem;
     }
     
     .post-title {
