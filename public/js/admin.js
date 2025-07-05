@@ -37,7 +37,45 @@ class AdminDashboard {
 
         // Logout
         document.getElementById('logout-btn').addEventListener('click', () => {
+            this.showLogoutModal();
+        });
+
+        // Logout modal events
+        document.getElementById('logout-cancel').addEventListener('click', () => {
+            this.hideLogoutModal();
+        });
+
+        document.getElementById('logout-confirm').addEventListener('click', () => {
             this.logout();
+        });
+
+        // Close modal when clicking overlay
+        document.getElementById('logout-modal-overlay').addEventListener('click', (e) => {
+            if (e.target.id === 'logout-modal-overlay') {
+                this.hideLogoutModal();
+            }
+        });
+
+        // Close modal with Escape key
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && document.getElementById('logout-modal-overlay').classList.contains('active')) {
+                this.hideLogoutModal();
+            }
+            if (e.key === 'Escape' && document.getElementById('notification-modal-overlay').classList.contains('active')) {
+                this.hideNotificationModal();
+            }
+        });
+
+        // Notification modal events
+        document.getElementById('notification-close').addEventListener('click', () => {
+            this.hideNotificationModal();
+        });
+
+        // Close notification modal when clicking overlay
+        document.getElementById('notification-modal-overlay').addEventListener('click', (e) => {
+            if (e.target.id === 'notification-modal-overlay') {
+                this.hideNotificationModal();
+            }
         });
 
         // Analytics filters
@@ -453,6 +491,7 @@ class AdminDashboard {
 
             const url = this.editingPostId ? `/api/posts/${this.editingPostId}` : '/api/posts';
             const method = this.editingPostId ? 'PUT' : 'POST';
+            const isEditing = !!this.editingPostId;
 
             const response = await fetch(url, {
                 method,
@@ -467,9 +506,14 @@ class AdminDashboard {
                 throw new Error('Failed to save post');
             }
 
-            this.showSuccess(this.editingPostId ? 'Post updated successfully' : 'Post created successfully');
+            this.showSuccess(isEditing ? 'Post updated successfully' : 'Post created successfully');
             this.resetPostForm();
             this.loadPosts();
+
+            // If we were editing a post, switch back to the posts tab
+            if (isEditing) {
+                this.switchTab('posts');
+            }
 
         } catch (error) {
             console.error('Error saving post:', error);
@@ -540,6 +584,7 @@ class AdminDashboard {
 
     cancelEdit() {
         this.resetPostForm();
+        this.switchTab('posts');
     }
 
     resetPostForm() {
@@ -554,6 +599,21 @@ class AdminDashboard {
     logout() {
         localStorage.removeItem('admin_token');
         window.location.reload();
+    }
+
+    showLogoutModal() {
+        document.getElementById('logout-modal-overlay').classList.add('active');
+        document.body.style.overflow = 'hidden';
+    }
+
+    hideLogoutModal() {
+        document.getElementById('logout-modal-overlay').classList.remove('active');
+        document.body.style.overflow = '';
+    }
+
+    hideNotificationModal() {
+        document.getElementById('notification-modal-overlay').classList.remove('active');
+        document.body.style.overflow = '';
     }
 
     formatDate(dateString) {
@@ -572,15 +632,46 @@ class AdminDashboard {
     }
 
     showError(message) {
-        // Simple error display - could be enhanced with a proper notification system
+        // Show error notification modal
         console.error(message);
-        alert(message);
+        this.showNotificationModal(message, 'error');
     }
 
     showSuccess(message) {
-        // Simple success display - could be enhanced with a proper notification system
+        // Show success notification modal
         console.log(message);
-        alert(message);
+        this.showNotificationModal(message, 'success');
+    }
+
+    showNotificationModal(message, type = 'info') {
+        const modal = document.getElementById('notification-modal-overlay');
+        const modalContent = modal.querySelector('.modal-content');
+        const title = document.getElementById('notification-title');
+        const messageElement = document.getElementById('notification-message');
+        
+        // Set the icon and title based on type
+        if (type === 'success') {
+            title.innerHTML = '<i class="fas fa-check-circle"></i> Success';
+            modalContent.className = 'modal-content notification-modal success';
+        } else if (type === 'error') {
+            title.innerHTML = '<i class="fas fa-exclamation-triangle"></i> Error';
+            modalContent.className = 'modal-content notification-modal error';
+        } else {
+            title.innerHTML = '<i class="fas fa-info-circle"></i> Notification';
+            modalContent.className = 'modal-content notification-modal';
+        }
+        
+        // Set the message
+        messageElement.textContent = message;
+        
+        // Show the modal
+        modal.classList.add('active');
+        document.body.style.overflow = 'hidden';
+        
+        // Focus the OK button for accessibility
+        setTimeout(() => {
+            document.getElementById('notification-close').focus();
+        }, 100);
     }
 
     resizeCharts() {

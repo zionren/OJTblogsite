@@ -46,6 +46,25 @@ class PostPage {
                 this.trackEvent('video_play', this.post.id);
             }
         }, true);
+
+        // Notification modal events
+        document.getElementById('notification-close').addEventListener('click', () => {
+            this.hideNotificationModal();
+        });
+
+        // Close notification modal when clicking overlay
+        document.getElementById('notification-modal-overlay').addEventListener('click', (e) => {
+            if (e.target.id === 'notification-modal-overlay') {
+                this.hideNotificationModal();
+            }
+        });
+
+        // Close modal with Escape key
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && document.getElementById('notification-modal-overlay').classList.contains('active')) {
+                this.hideNotificationModal();
+            }
+        });
     }
 
     async loadPost() {
@@ -177,7 +196,7 @@ class PostPage {
 
         } catch (error) {
             console.error('Error submitting comment:', error);
-            alert('Failed to submit comment. Please try again.');
+            this.showNotificationModal('Failed to submit comment. Please try again.', 'error');
         }
     }
 
@@ -292,6 +311,42 @@ class PostPage {
         }).catch(error => {
             console.error('Analytics tracking error:', error);
         });
+    }
+
+    showNotificationModal(message, type = 'info') {
+        const modal = document.getElementById('notification-modal-overlay');
+        const modalContent = modal.querySelector('.modal-content');
+        const title = document.getElementById('notification-title');
+        const messageElement = document.getElementById('notification-message');
+        
+        // Set the icon and title based on type
+        if (type === 'success') {
+            title.innerHTML = '<i class="fas fa-check-circle"></i> Success';
+            modalContent.className = 'modal-content notification-modal success';
+        } else if (type === 'error') {
+            title.innerHTML = '<i class="fas fa-exclamation-triangle"></i> Error';
+            modalContent.className = 'modal-content notification-modal error';
+        } else {
+            title.innerHTML = '<i class="fas fa-info-circle"></i> Notification';
+            modalContent.className = 'modal-content notification-modal';
+        }
+        
+        // Set the message
+        messageElement.textContent = message;
+        
+        // Show the modal
+        modal.classList.add('active');
+        document.body.style.overflow = 'hidden';
+        
+        // Focus the OK button for accessibility
+        setTimeout(() => {
+            document.getElementById('notification-close').focus();
+        }, 100);
+    }
+
+    hideNotificationModal() {
+        document.getElementById('notification-modal-overlay').classList.remove('active');
+        document.body.style.overflow = '';
     }
 }
 
