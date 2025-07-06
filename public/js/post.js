@@ -168,7 +168,30 @@ class PostPage {
         `).join('');
     }
 
+    // Custom validation functions
+    validateCommentForm() {
+        const name = document.getElementById('comment-name').value.trim();
+        const content = document.getElementById('comment-content').value.trim();
+        
+        if (!name) {
+            this.showNotificationModal('Name is required', 'error');
+            return false;
+        }
+        
+        if (!content) {
+            this.showNotificationModal('Comment content is required', 'error');
+            return false;
+        }
+        
+        return true;
+    }
+
     async submitComment() {
+        // Validate form first
+        if (!this.validateCommentForm()) {
+            return;
+        }
+        
         const form = document.getElementById('comment-form');
         const formData = new FormData(form);
         

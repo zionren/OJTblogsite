@@ -64,6 +64,25 @@ class AdminDashboard {
             if (e.key === 'Escape' && document.getElementById('notification-modal-overlay').classList.contains('active')) {
                 this.hideNotificationModal();
             }
+            if (e.key === 'Escape' && document.getElementById('delete-modal-overlay').classList.contains('active')) {
+                this.hideDeleteModal();
+            }
+        });
+
+        // Delete modal events
+        document.getElementById('delete-cancel').addEventListener('click', () => {
+            this.hideDeleteModal();
+        });
+
+        document.getElementById('delete-confirm').addEventListener('click', () => {
+            this.confirmDelete();
+        });
+
+        // Close delete modal when clicking overlay
+        document.getElementById('delete-modal-overlay').addEventListener('click', (e) => {
+            if (e.target.id === 'delete-modal-overlay') {
+                this.hideDeleteModal();
+            }
         });
 
         // Notification modal events
@@ -479,7 +498,42 @@ class AdminDashboard {
         `).join('');
     }
 
+    // Custom validation functions
+    validatePostForm() {
+        const title = document.getElementById('post-title').value.trim();
+        const content = document.getElementById('post-content').value.trim();
+        
+        if (!title) {
+            this.showNotificationModal('Post title is required', 'error');
+            return false;
+        }
+        
+        if (!content) {
+            this.showNotificationModal('Post content is required', 'error');
+            return false;
+        }
+        
+        // Optional: validate YouTube URL format if provided
+        const youtubeUrl = document.getElementById('post-youtube-url').value.trim();
+        if (youtubeUrl && !this.isValidYouTubeUrl(youtubeUrl)) {
+            this.showNotificationModal('Please enter a valid YouTube URL', 'error');
+            return false;
+        }
+        
+        return true;
+    }
+    
+    isValidYouTubeUrl(url) {
+        const youtubeRegex = /^(https?:\/\/)?(www\.)?(youtube\.com|youtu\.be)\/.+$/;
+        return youtubeRegex.test(url);
+    }
+
     async savePost() {
+        // Validate form first
+        if (!this.validatePostForm()) {
+            return;
+        }
+        
         try {
             const formData = new FormData(document.getElementById('post-form'));
             const postData = {
@@ -557,12 +611,29 @@ class AdminDashboard {
     }
 
     async deletePost(postId) {
-        if (!confirm('Are you sure you want to delete this post? This action cannot be undone.')) {
+        // Store the post ID for the confirmation
+        this.postToDelete = postId;
+        this.showDeleteModal();
+    }
+
+    showDeleteModal() {
+        document.getElementById('delete-modal-overlay').classList.add('active');
+        document.body.style.overflow = 'hidden';
+    }
+
+    hideDeleteModal() {
+        document.getElementById('delete-modal-overlay').classList.remove('active');
+        document.body.style.overflow = '';
+        this.postToDelete = null;
+    }
+
+    async confirmDelete() {
+        if (!this.postToDelete) {
             return;
         }
 
         try {
-            const response = await fetch(`/api/posts/${postId}`, {
+            const response = await fetch(`/api/posts/${this.postToDelete}`, {
                 method: 'DELETE',
                 headers: {
                     'Authorization': `Bearer ${this.token}`
@@ -573,11 +644,13 @@ class AdminDashboard {
                 throw new Error('Failed to delete post');
             }
 
+            this.hideDeleteModal();
             this.showSuccess('Post deleted successfully');
             this.loadPosts();
 
         } catch (error) {
             console.error('Error deleting post:', error);
+            this.hideDeleteModal();
             this.showError('Failed to delete post');
         }
     }
@@ -613,6 +686,11 @@ class AdminDashboard {
 
     hideNotificationModal() {
         document.getElementById('notification-modal-overlay').classList.remove('active');
+        document.body.style.overflow = '';
+    }
+
+    hideDeleteModal() {
+        document.getElementById('delete-modal-overlay').classList.remove('active');
         document.body.style.overflow = '';
     }
 

@@ -66,9 +66,53 @@ class AuthManager {
             passwordToggleIcon.classList.remove('fa-eye-slash');
             passwordToggleIcon.classList.add('fa-eye');
         }
+   }
+
+    // Custom validation functions
+    validateLoginForm() {
+        const email = document.getElementById('email').value.trim();
+        const password = document.getElementById('password').value.trim();
+        
+        if (!email) {
+            this.showValidationError('Email is required');
+            return false;
+        }
+        
+        if (!password) {
+            this.showValidationError('Password is required');
+            return false;
+        }
+        
+        // Basic email validation
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(email)) {
+            this.showValidationError('Please enter a valid email address');
+            return false;
+        }
+        
+        return true;
+    }
+    
+    showValidationError(message) {
+        // Use admin dashboard's notification modal if available
+        if (window.adminDashboard && window.adminDashboard.showNotificationModal) {
+            window.adminDashboard.showNotificationModal(message, 'error');
+        } else {
+            // Fallback for auth page - show simple error
+            const errorElement = document.getElementById('login-error');
+            if (errorElement) {
+                errorElement.textContent = message;
+                errorElement.style.display = 'block';
+            }
+        }
     }
 
     async handleLogin() {
+        // Validate form first
+        if (!this.validateLoginForm()) {
+            return;
+        }
+        
         const email = document.getElementById('email').value;
         const password = document.getElementById('password').value;
         const errorElement = document.getElementById('login-error');
