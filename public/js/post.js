@@ -353,8 +353,8 @@ class PostPage {
         const videoId = this.extractYouTubeId(url);
         if (!videoId) return '';
         
-        // Remove autoplay, let user control when to play
-        return `https://www.youtube.com/embed/${videoId}?controls=1&showinfo=0&rel=0`;
+        // Explicitly disable autoplay, let user control when to play
+        return `https://www.youtube.com/embed/${videoId}?autoplay=0&controls=1&showinfo=0&rel=0`;
     }
 
     extractYouTubeId(url) {

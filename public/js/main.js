@@ -77,10 +77,13 @@ class BlogApp {
                 </header>
                 
                 ${post.youtube_url ? `
-                    <div class="post-card-video">
-                        <iframe src="${this.getYouTubeEmbedUrl(post.youtube_url)}" 
-                                allowfullscreen>
-                        </iframe>
+                    <div class="post-card-video" id="video-container-${post.id}">
+                        <div class="video-thumbnail" onclick="window.blogApp.loadVideo('${post.youtube_url}', ${post.id})"
+                             style="position: relative; width: 100%; height: 200px; background-image: url('https://img.youtube.com/vi/${this.extractYouTubeId(post.youtube_url)}/maxresdefault.jpg'); background-size: cover; background-position: center; cursor: pointer; display: flex; align-items: center; justify-content: center; border-radius: 8px; overflow: hidden;">
+                            <div style="width: 60px; height: 60px; background: rgba(0, 0, 0, 0.8); border-radius: 50%; display: flex; align-items: center; justify-content: center; transition: all 0.3s ease;">
+                                <i class="fas fa-play" style="color: white; font-size: 20px; margin-left: 3px;"></i>
+                            </div>
+                        </div>
                     </div>
                 ` : ''}
                 
@@ -140,11 +143,29 @@ class BlogApp {
         window.scrollTo({ top: 0, behavior: 'smooth' });
     }
 
+    loadVideo(youtubeUrl, postId) {
+        const videoContainer = document.getElementById(`video-container-${postId}`);
+        const videoId = this.extractYouTubeId(youtubeUrl);
+        
+        if (!videoId || !videoContainer) return;
+        
+        // Replace thumbnail with iframe
+        videoContainer.innerHTML = `
+            <iframe src="${this.getYouTubeEmbedUrl(youtubeUrl)}" 
+                    width="100%" height="200" frameborder="0" allowfullscreen>
+            </iframe>
+        `;
+        
+        // Track video play event
+        this.trackEvent('video_play', postId);
+    }
+
     getYouTubeEmbedUrl(url) {
         const videoId = this.extractYouTubeId(url);
         if (!videoId) return '';
         
-        return `https://www.youtube.com/embed/${videoId}?autoplay=1&mute=1&controls=1&showinfo=0&rel=0`;
+        // Explicitly disable autoplay, let user control when to play
+        return `https://www.youtube.com/embed/${videoId}?autoplay=0&controls=1&showinfo=0&rel=0`;
     }
 
     extractYouTubeId(url) {
@@ -174,7 +195,7 @@ class BlogApp {
         return div.innerHTML;
     }
 
-    trackEvent(eventType, postId, additionalData = {}) {
+    trackEvent(eventType, postId) {
         fetch('/api/analytics/track', {
             method: 'POST',
             headers: {
@@ -183,8 +204,8 @@ class BlogApp {
             body: JSON.stringify({
                 eventType,
                 postId,
-                sessionId: this.sessionId,
-                additionalData
+                sessionId: this.generateSessionId(),
+                additionalData: {}
             })
         }).catch(error => {
             console.error('Analytics tracking error:', error);
