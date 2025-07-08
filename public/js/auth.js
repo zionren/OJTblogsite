@@ -32,6 +32,15 @@ class AuthManager {
         if (!window.adminDashboard) {
             window.adminDashboard = new AdminDashboard();
         }
+        
+        // Make debug method available globally
+        window.debugAdminDashboard = () => {
+            if (window.adminDashboard) {
+                window.adminDashboard.debugState();
+            } else {
+                console.log('Admin dashboard not initialized');
+            }
+        };
     }
 
     setupEventListeners() {

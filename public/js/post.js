@@ -123,7 +123,9 @@ class PostPage {
             const iframe = document.getElementById('youtube-iframe');
             
             videoContainer.style.display = 'block';
-            iframe.src = this.getYouTubeEmbedUrl(this.post.youtube_url);
+            
+            // Show thumbnail first, load video on click
+            this.setupVideoThumbnail(this.post.youtube_url, videoContainer, iframe);
             
             // Track video load
             this.trackEvent('video_load', this.post.id);
@@ -277,11 +279,82 @@ class PostPage {
         likeCount.textContent = likeCounts[this.post.id];
     }
 
+    setupVideoThumbnail(youtubeUrl, videoContainer, iframe) {
+        const videoId = this.extractYouTubeId(youtubeUrl);
+        if (!videoId) return;
+        
+        // Create thumbnail overlay
+        const thumbnailOverlay = document.createElement('div');
+        thumbnailOverlay.style.cssText = `
+            position: relative;
+            width: 100%;
+            height: 400px;
+            background-image: url('https://img.youtube.com/vi/${videoId}/maxresdefault.jpg');
+            background-size: cover;
+            background-position: center;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 8px;
+            overflow: hidden;
+        `;
+        
+        // Create play button
+        const playButton = document.createElement('div');
+        playButton.innerHTML = `
+            <div style="
+                width: 80px;
+                height: 80px;
+                background: rgba(0, 0, 0, 0.8);
+                border-radius: 50%;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                transition: all 0.3s ease;
+            ">
+                <i class="fas fa-play" style="
+                    color: white;
+                    font-size: 30px;
+                    margin-left: 5px;
+                "></i>
+            </div>
+        `;
+        
+        thumbnailOverlay.appendChild(playButton);
+        
+        // Add hover effect
+        thumbnailOverlay.addEventListener('mouseenter', () => {
+            playButton.firstElementChild.style.transform = 'scale(1.1)';
+            playButton.firstElementChild.style.background = 'rgba(0, 0, 0, 0.9)';
+        });
+        
+        thumbnailOverlay.addEventListener('mouseleave', () => {
+            playButton.firstElementChild.style.transform = 'scale(1)';
+            playButton.firstElementChild.style.background = 'rgba(0, 0, 0, 0.8)';
+        });
+        
+        // Load video when clicked
+        thumbnailOverlay.addEventListener('click', () => {
+            iframe.src = this.getYouTubeEmbedUrl(youtubeUrl);
+            iframe.style.display = 'block';
+            thumbnailOverlay.style.display = 'none';
+            
+            // Track video play
+            this.trackEvent('video_play', this.post.id);
+        });
+        
+        // Hide iframe initially and show thumbnail
+        iframe.style.display = 'none';
+        videoContainer.insertBefore(thumbnailOverlay, iframe);
+    }
+
     getYouTubeEmbedUrl(url) {
         const videoId = this.extractYouTubeId(url);
         if (!videoId) return '';
         
-        return `https://www.youtube.com/embed/${videoId}?autoplay=1&mute=1&controls=1&showinfo=0&rel=0`;
+        // Remove autoplay, let user control when to play
+        return `https://www.youtube.com/embed/${videoId}?controls=1&showinfo=0&rel=0`;
     }
 
     extractYouTubeId(url) {

@@ -5,6 +5,17 @@ class AdminDashboard {
         this.currentTab = 'analytics';
         this.editingPostId = null;
         this.charts = {};
+        
+        // Cache for data
+        this.cachedAnalytics = null;
+        this.cachedPosts = null;
+        
+        console.log('AdminDashboard constructor - token:', this.token ? 'present' : 'missing');
+        console.log('AdminDashboard constructor - initial cache state:', {
+            analytics: this.cachedAnalytics,
+            posts: this.cachedPosts
+        });
+        
         this.init();
     }
 
@@ -14,9 +25,14 @@ class AdminDashboard {
         // Only load data if we have a token
         if (this.token) {
             // Add a small delay to ensure the page is fully loaded
+            // Only load the current tab's data initially
             setTimeout(() => {
-                this.loadAnalytics();
-                this.loadPosts();
+                if (this.currentTab === 'analytics') {
+                    this.loadAnalytics();
+                } else if (this.currentTab === 'posts') {
+                    this.loadPosts();
+                }
+                // Don't preload all data - let user switch tabs to load them
             }, 100);
         } else {
             console.warn('No admin token found, skipping data load');
@@ -25,12 +41,19 @@ class AdminDashboard {
 
     setupEventListeners() {
         // Tab switching - only for elements with data-tab attribute
-        document.querySelectorAll('.tab-btn[data-tab]').forEach(btn => {
+        const tabButtons = document.querySelectorAll('.tab-btn[data-tab]');
+        console.log('Setting up event listeners for', tabButtons.length, 'tab buttons');
+        
+        tabButtons.forEach(btn => {
+            console.log('Adding event listener to button with data-tab:', btn.dataset.tab);
             btn.addEventListener('click', (e) => {
                 e.preventDefault();
                 const tabName = e.target.dataset.tab;
+                console.log(`Tab clicked: ${tabName}`);
                 if (tabName) {
                     this.switchTab(tabName);
+                } else {
+                    console.warn('No tabName found on clicked element');
                 }
             });
         });
@@ -99,7 +122,7 @@ class AdminDashboard {
 
         // Analytics filters
         document.getElementById('apply-filters').addEventListener('click', () => {
-            this.loadAnalytics();
+            this.refreshAnalytics();
         });
 
         // Post form
@@ -115,7 +138,7 @@ class AdminDashboard {
 
         // Refresh posts
         document.getElementById('refresh-posts').addEventListener('click', () => {
-            this.loadPosts();
+            this.refreshPosts();
         });
 
         // Window resize handler for charts responsiveness
@@ -129,40 +152,75 @@ class AdminDashboard {
     }
 
     switchTab(tabName) {
-        // Check if tabName is valid
-        if (!tabName) {
-            console.warn('switchTab called with invalid tabName:', tabName);
-            return;
-        }
-
-        // Update active tab button
-        document.querySelectorAll('.tab-btn').forEach(btn => {
-            btn.classList.remove('active');
-        });
-        
-        const targetTab = document.querySelector(`[data-tab="${tabName}"]`);
-        if (targetTab) {
-            targetTab.classList.add('active');
-        } else {
-            console.warn('No element found with data-tab:', tabName);
-            return;
-        }
-
-        // Update active tab content
-        document.querySelectorAll('.tab-content').forEach(content => {
-            content.classList.remove('active');
-        });
-        document.getElementById(`${tabName}-tab`).classList.add('active');
-
-        this.currentTab = tabName;
-
-        // Load tab-specific data only if we have a valid token
-        if (this.token && this.isTokenValid()) {
-            if (tabName === 'analytics') {
-                this.loadAnalytics();
-            } else if (tabName === 'posts') {
-                this.loadPosts();
+        try {
+            // Check if tabName is valid
+            if (!tabName) {
+                console.warn('switchTab called with invalid tabName:', tabName);
+                return;
             }
+
+            console.log(`=== SWITCHING TO TAB: ${tabName} ===`);
+            console.log('Current cache state:', {
+                analytics: this.cachedAnalytics ? 'CACHED' : 'NOT CACHED',
+                posts: this.cachedPosts ? 'CACHED' : 'NOT CACHED'
+            });
+
+            // Update active tab button
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            
+            const targetTab = document.querySelector(`[data-tab="${tabName}"]`);
+            if (targetTab) {
+                targetTab.classList.add('active');
+            } else {
+                console.warn('No element found with data-tab:', tabName);
+                return;
+            }
+
+            // Update active tab content
+            document.querySelectorAll('.tab-content').forEach(content => {
+                content.classList.remove('active');
+            });
+            
+            const targetContent = document.getElementById(`${tabName}-tab`);
+            if (targetContent) {
+                targetContent.classList.add('active');
+            } else {
+                console.error('No content element found with id:', `${tabName}-tab`);
+                return;
+            }
+
+            this.currentTab = tabName;
+            console.log('Current tab set to:', this.currentTab);
+
+            // Load tab-specific data only if we have a valid token
+            if (this.token && this.isTokenValid()) {
+                if (tabName === 'analytics') {
+                    if (this.cachedAnalytics) {
+                        console.log('Using cached analytics data', this.cachedAnalytics);
+                        this.renderAnalytics(this.cachedAnalytics);
+                    } else {
+                        console.log('Loading analytics for the first time - no cache found');
+                        this.loadAnalytics();
+                    }
+                } else if (tabName === 'posts') {
+                    if (this.cachedPosts) {
+                        console.log('Using cached posts data', this.cachedPosts);
+                        this.renderPosts(this.cachedPosts);
+                    } else {
+                        console.log('Loading posts for the first time - no cache found');
+                        this.loadPosts();
+                    }
+                } else {
+                    console.log(`No data loading needed for ${tabName} tab`);
+                }
+            } else {
+                console.log('No token or invalid token, skipping data load');
+            }
+        } catch (error) {
+            console.error('Error in switchTab:', error);
+            // Don't let errors break the entire dashboard
         }
     }
 
@@ -214,6 +272,11 @@ class AdminDashboard {
 
             const data = await response.json();
             console.log('Analytics data received:', data);
+            
+            // Cache the data
+            this.cachedAnalytics = data;
+            console.log('Analytics data cached:', this.cachedAnalytics);
+            
             this.renderAnalytics(data);
 
         } catch (error) {
@@ -460,12 +523,30 @@ class AdminDashboard {
             }
 
             const data = await response.json();
+            
+            // Cache the data
+            this.cachedPosts = data.posts;
+            console.log('Posts data cached:', this.cachedPosts);
+            
             this.renderPosts(data.posts);
 
         } catch (error) {
             console.error('Error loading posts:', error);
             this.showError('Failed to load posts');
         }
+    }
+
+    // Methods to force refresh data
+    refreshAnalytics() {
+        console.log('Refreshing analytics - clearing cache');
+        this.cachedAnalytics = null;
+        this.loadAnalytics();
+    }
+
+    refreshPosts() {
+        console.log('Refreshing posts - clearing cache');
+        this.cachedPosts = null;
+        this.loadPosts();
     }
 
     renderPosts(posts) {
@@ -562,6 +643,12 @@ class AdminDashboard {
 
             this.showSuccess(isEditing ? 'Post updated successfully' : 'Post created successfully');
             this.resetPostForm();
+            
+            // Clear cache since data has changed
+            console.log('Clearing cache after post save');
+            this.cachedPosts = null;
+            this.cachedAnalytics = null; // Analytics might also be affected
+            
             this.loadPosts();
 
             // If we were editing a post, switch back to the posts tab
@@ -646,6 +733,12 @@ class AdminDashboard {
 
             this.hideDeleteModal();
             this.showSuccess('Post deleted successfully');
+            
+            // Clear cache since data has changed
+            console.log('Clearing cache after post delete');
+            this.cachedPosts = null;
+            this.cachedAnalytics = null; // Analytics might also be affected
+            
             this.loadPosts();
 
         } catch (error) {
@@ -795,6 +888,19 @@ class AdminDashboard {
             return false;
         }
     }
+
+    // Debug method to check current state
+    debugState() {
+        console.log('=== ADMIN DASHBOARD DEBUG STATE ===');
+        console.log('Token:', this.token ? 'present' : 'missing');
+        console.log('Current tab:', this.currentTab);
+        console.log('Cache state:', {
+            analytics: this.cachedAnalytics ? 'CACHED' : 'NOT CACHED',
+            posts: this.cachedPosts ? 'CACHED' : 'NOT CACHED'
+        });
+        console.log('Charts:', Object.keys(this.charts));
+        console.log('===============================');
+    }
 }
 
 // Make AdminDashboard available globally
@@ -804,4 +910,14 @@ window.AdminDashboard = AdminDashboard;
 // This will be called by the AuthManager when authentication is confirmed
 document.addEventListener('DOMContentLoaded', () => {
     // Don't initialize here - let auth.js handle initialization after login
+    
+    // Add global error handler to catch any issues
+    window.addEventListener('error', (event) => {
+        console.error('Global error caught:', event.error);
+        console.error('Error occurred in:', event.filename, 'at line', event.lineno);
+    });
+    
+    window.addEventListener('unhandledrejection', (event) => {
+        console.error('Unhandled promise rejection:', event.reason);
+    });
 });
