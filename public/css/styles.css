@@ -149,6 +149,16 @@ body {
     color: white;
 }
 
+/* Ensure links retain white font color in dark mode */
+a {
+    color: var(--text-color);
+    text-decoration: none;
+}
+
+[data-theme="dark"] a {
+    color: var(--text-color);
+}
+
 /* Main content */
 .main-content {
     padding: 2rem 0;
