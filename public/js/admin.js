@@ -151,6 +151,7 @@ class AdminDashboard {
         });
     }
 
+    // this is the site of the errors, please fix this!
     switchTab(tabName) {
         try {
             // Check if tabName is valid
