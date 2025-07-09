@@ -84,6 +84,10 @@
                         <i class="fas fa-plus"></i>
                         <span>Create Post</span>
                     </a>
+                    <a href="#" class="sidebar-link tab-btn" data-tab="comments">
+                        <i class="fas fa-comments"></i>
+                        <span>Comments</span>
+                    </a>
                     
                     <!-- Divider -->
                     <div class="sidebar-divider"></div>
@@ -209,6 +213,48 @@
                         </form>
                     </div>
                 </div>
+
+                <!-- Comments Tab -->
+                <div class="tab-content" id="comments-tab">
+                    <div class="dashboard-content">
+                        <div class="content-header">
+                            <h2><i class="fas fa-comments"></i> Comment Moderation</h2>
+                            <button class="btn-secondary" id="refresh-comments">
+                                <i class="fas fa-sync-alt"></i> Refresh
+                            </button>
+                        </div>
+
+                        <div class="comments-section">
+                            <div class="comments-filters">
+                                <select id="comment-post-filter" class="form-control">
+                                    <option value="">All Posts</option>
+                                </select>
+                                <button class="btn-primary btn-small" id="apply-comment-filters">
+                                    <i class="fas fa-filter"></i> Filter
+                                </button>
+                            </div>
+
+                            <div class="comments-container">
+                                <div class="comments-table-container">
+                                    <table class="comments-table">
+                                        <thead>
+                                            <tr>
+                                                <th>Author</th>
+                                                <th>Comment</th>
+                                                <th>Post</th>
+                                                <th>Date</th>
+                                                <th>Actions</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="comments-table-body">
+                                            <!-- Comments will be loaded here -->
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
@@ -263,6 +309,27 @@
                 </button>
                 <button class="btn-danger" id="delete-confirm">
                     <i class="fas fa-trash"></i> Delete
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Comment Delete Confirmation Modal -->
+    <div class="modal-overlay" id="comment-delete-modal-overlay">
+        <div class="modal-content delete-modal">
+            <div class="modal-header">
+                <h3><i class="fas fa-exclamation-triangle"></i> Delete Comment</h3>
+            </div>
+            <div class="modal-body">
+                <p>Are you sure you want to delete this comment? This action cannot be undone.</p>
+                <div class="comment-preview" id="comment-preview">
+                    <!-- Comment preview will be shown here -->
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-secondary" id="comment-delete-cancel">Cancel</button>
+                <button class="btn-danger" id="comment-delete-confirm">
+                    <i class="fas fa-trash"></i> Delete Comment
                 </button>
             </div>
         </div>

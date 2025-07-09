@@ -475,6 +475,54 @@ app.post('/api/posts/:id/comments', async (req, res) => {
     }
 });
 
+// Admin Comment Management API
+app.get('/api/admin/comments', authenticateToken, async (req, res) => {
+    try {
+        const { postId } = req.query;
+        
+        let query;
+        if (postId) {
+            query = client`
+                SELECT c.*, p.title as post_title, p.slug as post_slug 
+                FROM comments c 
+                JOIN posts p ON c.post_id = p.id 
+                WHERE c.post_id = ${postId}
+                ORDER BY c.created_at DESC
+            `;
+        } else {
+            query = client`
+                SELECT c.*, p.title as post_title, p.slug as post_slug 
+                FROM comments c 
+                JOIN posts p ON c.post_id = p.id 
+                ORDER BY c.created_at DESC
+            `;
+        }
+        
+        const comments = await query;
+        res.json(comments);
+    } catch (error) {
+        console.error('Get admin comments error:', error);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+});
+
+app.delete('/api/admin/comments/:id', authenticateToken, async (req, res) => {
+    try {
+        const { id } = req.params;
+        
+        const result = await client`DELETE FROM comments WHERE id = ${id} RETURNING *`;
+        
+        if (result.length === 0) {
+            return res.status(404).json({ error: 'Comment not found' });
+        }
+
+        res.json({ message: 'Comment deleted successfully' });
+    } catch (error) {
+        console.error('Delete comment error:', error);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+});
+
 // Analytics API
 app.get('/api/analytics/dashboard', authenticateToken, async (req, res) => {
     try {

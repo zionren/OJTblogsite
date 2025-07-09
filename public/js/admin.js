@@ -9,6 +9,8 @@ class AdminDashboard {
         // Cache for data
         this.cachedAnalytics = null;
         this.cachedPosts = null;
+        this.cachedComments = null;
+        this.deletingCommentId = null;
         
         console.log('AdminDashboard constructor - token:', this.token ? 'present' : 'missing');
         console.log('AdminDashboard constructor - initial cache state:', {
@@ -142,6 +144,30 @@ class AdminDashboard {
             this.refreshPosts();
         });
 
+        // Comment moderation event listeners
+        document.getElementById('refresh-comments')?.addEventListener('click', () => {
+            this.refreshComments();
+        });
+
+        document.getElementById('apply-comment-filters')?.addEventListener('click', () => {
+            this.applyCommentFilters();
+        });
+
+        document.getElementById('comment-delete-cancel')?.addEventListener('click', () => {
+            this.hideCommentDeleteModal();
+        });
+
+        document.getElementById('comment-delete-confirm')?.addEventListener('click', () => {
+            this.confirmCommentDelete();
+        });
+
+        // Close comment delete modal when clicking overlay
+        document.getElementById('comment-delete-modal-overlay')?.addEventListener('click', (e) => {
+            if (e.target.id === 'comment-delete-modal-overlay') {
+                this.hideCommentDeleteModal();
+            }
+        });
+
         // Window resize handler for charts responsiveness
         let resizeTimeout;
         window.addEventListener('resize', () => {
@@ -214,6 +240,15 @@ class AdminDashboard {
                         console.log('Loading posts for the first time - no cache found');
                         this.loadPosts();
                     }
+                } else if (tabName === 'comments') {
+                    if (this.cachedComments) {
+                        console.log('Using cached comments data', this.cachedComments);
+                        this.renderComments(this.cachedComments);
+                    } else {
+                        console.log('Loading comments for the first time - no cache found');
+                        this.showCommentsLoading();
+                        this.loadComments();
+                    }
                 } else {
                     console.log(`No data loading needed for ${tabName} tab`);
                 }
@@ -226,13 +261,47 @@ class AdminDashboard {
         }
     }
 
+    escapeHtml(text) {
+        if (!text) return '';
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+
+    // Token validation method
+    isTokenValid() {
+        if (!this.token) return false;
+        
+        try {
+            const payload = JSON.parse(atob(this.token.split('.')[1]));
+            const now = Math.floor(Date.now() / 1000);
+            return payload.exp > now;
+        } catch (error) {
+            console.error('Token validation error:', error);
+            return false;
+        }
+    }
+
+    // Chart resize method
+    resizeCharts() {
+        try {
+            Object.values(this.charts).forEach(chart => {
+                if (chart && typeof chart.resize === 'function') {
+                    chart.resize();
+                }
+            });
+        } catch (error) {
+            console.error('Error resizing charts:', error);
+        }
+    }
+
+    // Analytics loading method
     async loadAnalytics() {
         if (!this.token) {
             console.warn('No token available for analytics');
             return;
         }
 
-        // Double-check token validity before making API calls
         if (!this.isTokenValid()) {
             console.warn('Token is invalid, redirecting to login');
             localStorage.removeItem('admin_token');
@@ -249,36 +318,20 @@ class AdminDashboard {
                 url += `?startDate=${startDate}&endDate=${endDate}`;
             }
 
-            console.log('Loading analytics from:', url);
-
             const response = await fetch(url, {
                 headers: {
-                    'Authorization': `Bearer ${this.token}`,
-                    'Content-Type': 'application/json'
+                    'Authorization': `Bearer ${this.token}`
                 }
             });
 
-            console.log('Analytics response status:', response.status);
-
             if (!response.ok) {
-                if (response.status === 401 || response.status === 403) {
-                    console.error('Authentication failed, redirecting to login');
-                    localStorage.removeItem('admin_token');
-                    window.location.reload();
-                    return;
-                }
-                const errorData = await response.text();
-                console.error('Analytics API error:', response.status, errorData);
-                throw new Error(`Failed to load analytics: ${response.status} ${response.statusText}`);
+                throw new Error('Failed to fetch analytics');
             }
 
             const data = await response.json();
-            console.log('Analytics data received:', data);
+            console.log('Analytics loaded:', data);
             
-            // Cache the data
             this.cachedAnalytics = data;
-            console.log('Analytics data cached:', this.cachedAnalytics);
-            
             this.renderAnalytics(data);
 
         } catch (error) {
@@ -513,7 +566,7 @@ class AdminDashboard {
         }
 
         try {
-            const response = await fetch('/api/posts?published=false', {
+            const response = await fetch('/api/posts?published=false&limit=1000', {
                 headers: {
                     'Authorization': `Bearer ${this.token}`
                 }
@@ -834,120 +887,218 @@ class AdminDashboard {
         });
     }
 
-    escapeHtml(text) {
-        const div = document.createElement('div');
-        div.textContent = text;
-        return div.innerHTML;
-    }
-
-    showError(message) {
-        // Show error notification modal
-        console.error(message);
-        this.showNotificationModal(message, 'error');
-    }
-
-    showSuccess(message) {
-        // Show success notification modal
-        console.log(message);
-        this.showNotificationModal(message, 'success');
-    }
-
-    showNotificationModal(message, type = 'info') {
-        const modal = document.getElementById('notification-modal-overlay');
-        const modalContent = modal.querySelector('.modal-content');
-        const title = document.getElementById('notification-title');
-        const messageElement = document.getElementById('notification-message');
-        
-        // Set the icon and title based on type
-        if (type === 'success') {
-            title.innerHTML = '<i class="fas fa-check-circle"></i> Success';
-            modalContent.className = 'modal-content notification-modal success';
-        } else if (type === 'error') {
-            title.innerHTML = '<i class="fas fa-exclamation-triangle"></i> Error';
-            modalContent.className = 'modal-content notification-modal error';
-        } else {
-            title.innerHTML = '<i class="fas fa-info-circle"></i> Notification';
-            modalContent.className = 'modal-content notification-modal';
+    // Comment Moderation Methods
+    async loadComments() {
+        if (!this.token || !this.isTokenValid()) {
+            console.warn('No valid token for comments');
+            return;
         }
-        
-        // Set the message
-        messageElement.textContent = message;
-        
-        // Show the modal
-        modal.classList.add('active');
-        document.body.style.overflow = 'hidden';
-        
-        // Focus the OK button for accessibility
-        setTimeout(() => {
-            document.getElementById('notification-close').focus();
-        }, 100);
-    }
 
-    resizeCharts() {
-        // Resize all existing charts
-        Object.values(this.charts).forEach(chart => {
-            if (chart && typeof chart.resize === 'function') {
-                chart.resize();
-                
-                // Update options for better mobile display
-                const isMobile = window.innerWidth <= 768;
-                const isSmallMobile = window.innerWidth <= 480;
-                
-                try {
-                    if (chart.options && chart.options.plugins && chart.options.plugins.legend) {
-                        chart.options.plugins.legend.display = !isSmallMobile;
-                        chart.options.plugins.legend.labels.font.size = isMobile ? 10 : 12;
-                    }
-                }
-                catch (error) {
-                    console.error("Failed to update the chart:", error);
-                    // do not let the errors break the dashboard itself
-                    this.showNotificationModal('Failed to update chart options. Please try refreshing the page.', 'error');
-                }
-                
-                if (chart.options && chart.options.scales) {
-                    // Update tick limits based on screen size
-                    if (chart.options.scales.y && chart.options.scales.y.ticks) {
-                        chart.options.scales.y.ticks.maxTicksLimit = isMobile ? 4 : 6;
-                        chart.options.scales.y.ticks.font.size = isMobile ? 9 : 11;
-                    }
-                    if (chart.options.scales.x && chart.options.scales.x.ticks) {
-                        chart.options.scales.x.ticks.maxTicksLimit = isMobile ? 6 : 10;
-                        chart.options.scales.x.ticks.font.size = isMobile ? 9 : 11;
-                    }
-                }
-                
-                chart.update('resize');
-            }
-        });
-    }
-
-    isTokenValid() {
-        if (!this.token) return false;
-        
         try {
-            const payload = JSON.parse(atob(this.token.split('.')[1]));
-            const now = Date.now() / 1000;
-            return payload.exp > now;
-        } 
-        catch (error) {
-            console.error("Failed to validate post token:", error);
-            // If we can't parse the token, treat it as invalid
-            return false;
+            const postFilter = document.getElementById('comment-post-filter')?.value || '';
+            let url = '/api/admin/comments';
+            if (postFilter) {
+                url += `?postId=${postFilter}`;
+            }
+
+            const response = await fetch(url, {
+                headers: {
+                    'Authorization': `Bearer ${this.token}`
+                }
+            });
+
+            if (!response.ok) {
+                throw new Error('Failed to fetch comments');
+            }
+
+            const comments = await response.json();
+            console.log('Comments loaded:', comments);
+            
+            this.cachedComments = comments;
+            this.renderComments(comments);
+            await this.loadPostsForFilter();
+
+        } catch (error) {
+            console.error('Error loading comments:', error);
+            this.showError('Failed to load comments');
         }
     }
 
-    // Debugging in browser console in case of possible errors in the situation
-    debugState() {
-        console.log('=== ADMIN DASHBOARD DEBUG STATE ===');
-        console.log('Token:', this.token ? 'present' : 'missing');
-        console.log('Current tab:', this.currentTab);
-        console.log('Cache state:', {
-            analytics: this.cachedAnalytics ? 'CACHED' : 'NOT CACHED',
-            posts: this.cachedPosts ? 'CACHED' : 'NOT CACHED'
-        });
-        console.log('Charts:', Object.keys(this.charts));
-        console.log('===============================');
+    async loadPostsForFilter() {
+        try {
+            const response = await fetch('/api/posts?published=false&limit=1000', {
+                headers: {
+                    'Authorization': `Bearer ${this.token}`
+                }
+            });
+
+            if (response.ok) {
+                const data = await response.json();
+                const posts = data.posts || []; // Extract posts array from response
+                const filterSelect = document.getElementById('comment-post-filter');
+                if (filterSelect) {
+                    filterSelect.innerHTML = '<option value="">All Posts</option>';
+                    posts.forEach(post => {
+                        const option = document.createElement('option');
+                        option.value = post.id;
+                        option.textContent = post.title;
+                        filterSelect.appendChild(option);
+                    });
+                }
+            }
+        } catch (error) {
+            console.error('Error loading posts for filter:', error);
+        }
+    }
+
+    renderComments(comments) {
+        const tbody = document.getElementById('comments-table-body');
+        const tableContainer = document.querySelector('.comments-table-container');
+        const commentsContainer = document.querySelector('.comments-container');
+        
+        if (!tbody || !tableContainer || !commentsContainer) return;
+
+        // Remove any existing empty state
+        const existingEmptyState = commentsContainer.querySelector('.comments-empty-state');
+        if (existingEmptyState) {
+            existingEmptyState.remove();
+        }
+
+        if (comments.length === 0) {
+            // Hide the table and show empty state
+            tableContainer.style.display = 'none';
+            
+            const emptyState = document.createElement('div');
+            emptyState.className = 'comments-empty-state';
+            emptyState.innerHTML = `
+                <i class="fas fa-comments"></i>
+                <h3>No Comments Yet</h3>
+                <p>When users post comments, they'll appear here for moderation.</p>
+            `;
+            commentsContainer.appendChild(emptyState);
+            return;
+        }
+
+        // Show table and hide empty state
+        tableContainer.style.display = 'block';
+
+        tbody.innerHTML = comments.map(comment => `
+            <tr>
+                <td>${this.escapeHtml(comment.author_name)}</td>
+                <td class="comment-content">
+                    <div class="comment-text">${this.escapeHtml(comment.content.substring(0, 100))}${comment.content.length > 100 ? '...' : ''}</div>
+                </td>
+                <td>
+                    <a href="/post/${comment.post_slug}" target="_blank" class="post-link">
+                        ${this.escapeHtml(comment.post_title)}
+                    </a>
+                </td>
+                <td>${new Date(comment.created_at).toLocaleDateString()}</td>
+                <td>
+                    <button class="delete-btn" onclick="adminDashboard.deleteComment(${comment.id}, '${this.escapeHtml(comment.author_name).replace(/'/g, "\\'")}', '${this.escapeHtml(comment.content.substring(0, 50)).replace(/'/g, "\\'")}...')">
+                        <i class="fas fa-trash"></i> Delete
+                    </button>
+                </td>
+            </tr>
+        `).join('');
+    }
+
+    deleteComment(commentId, authorName, contentPreview) {
+        this.deletingCommentId = commentId;
+        
+        const commentPreviewDiv = document.getElementById('comment-preview');
+        if (commentPreviewDiv) {
+            commentPreviewDiv.innerHTML = `
+                <div class="comment-preview-content">
+                    <strong>Author:</strong> ${this.escapeHtml(authorName)}<br>
+                    <strong>Comment:</strong> ${this.escapeHtml(contentPreview)}
+                </div>
+            `;
+        }
+        
+        this.showCommentDeleteModal();
+    }
+
+    showCommentDeleteModal() {
+        const modal = document.getElementById('comment-delete-modal-overlay');
+        if (modal) {
+            modal.classList.add('active');
+            document.body.style.overflow = 'hidden';
+        }
+    }
+
+    hideCommentDeleteModal() {
+        const modal = document.getElementById('comment-delete-modal-overlay');
+        if (modal) {
+            modal.classList.remove('active');
+            document.body.style.overflow = '';
+        }
+        this.deletingCommentId = null;
+    }
+
+    async confirmCommentDelete() {
+        if (!this.deletingCommentId) return;
+
+        try {
+            const response = await fetch(`/api/admin/comments/${this.deletingCommentId}`, {
+                method: 'DELETE',
+                headers: {
+                    'Authorization': `Bearer ${this.token}`
+                }
+            });
+
+            if (!response.ok) {
+                throw new Error('Failed to delete comment');
+            }
+
+            this.hideCommentDeleteModal();
+            this.showSuccess('Comment deleted successfully');
+            
+            this.cachedComments = null;
+            this.loadComments();
+
+        } catch (error) {
+            console.error('Error deleting comment:', error);
+            this.hideCommentDeleteModal();
+            this.showError('Failed to delete comment');
+        }
+    }
+
+    refreshComments() {
+        this.cachedComments = null;
+        this.showCommentsLoading();
+        this.loadComments();
+    }
+
+    applyCommentFilters() {
+        this.cachedComments = null;
+        this.showCommentsLoading();
+        this.loadComments();
+    }
+
+    showCommentsLoading() {
+        const tbody = document.getElementById('comments-table-body');
+        const tableContainer = document.querySelector('.comments-table-container');
+        const commentsContainer = document.querySelector('.comments-container');
+        
+        if (!tbody || !tableContainer || !commentsContainer) return;
+
+        // Remove any existing empty state
+        const existingEmptyState = commentsContainer.querySelector('.comments-empty-state');
+        if (existingEmptyState) {
+            existingEmptyState.remove();
+        }
+
+        // Show table and add loading state
+        tableContainer.style.display = 'block';
+        tbody.innerHTML = `
+            <tr>
+                <td colspan="5" class="comments-loading">
+                    <i class="fas fa-spinner"></i>
+                    Loading comments...
+                </td>
+            </tr>
+        `;
     }
 }
 

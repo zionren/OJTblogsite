@@ -354,9 +354,42 @@
     background-color: var(--surface-color);
     border-radius: 0.5rem;
     box-shadow: var(--shadow);
-    overflow: hidden;
     border: 1px solid var(--border-color);
     color: #e74c3c !important; /* Red text for better visibility */
+    max-height: 600px; /* Set maximum height for scrolling */
+    overflow-y: auto; /* Enable vertical scrolling */
+    overflow-x: auto; /* Enable horizontal scrolling if needed */
+}
+
+/* Custom scrollbar styling for posts table */
+.posts-table-container::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+.posts-table-container::-webkit-scrollbar-track {
+    background: var(--background-color);
+    border-radius: 4px;
+}
+
+.posts-table-container::-webkit-scrollbar-thumb {
+    background: var(--primary-color);
+    border-radius: 4px;
+    opacity: 0.7;
+}
+
+.posts-table-container::-webkit-scrollbar-thumb:hover {
+    background: #c0392b;
+    opacity: 1;
+}
+
+/* Dark theme scrollbar */
+[data-theme="dark"] .posts-table-container::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.1);
+}
+
+[data-theme="dark"] .posts-table-container::-webkit-scrollbar-thumb {
+    background: var(--primary-color);
 }
 
 .posts-table {
@@ -377,6 +410,10 @@
     background-color: var(--background-color);
     font-weight: 600;
     color: #e74c3c !important; /* Red text for better visibility */
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 .posts-table tr:hover {
@@ -1095,11 +1132,14 @@
     }
     
     .posts-table-container {
+        max-height: 500px; /* Reduce height on mobile */
         overflow-x: auto;
+        overflow-y: auto;
     }
     
     .posts-table {
         min-width: 600px;
+        font-size: 0.9rem; /* Slightly smaller text on mobile */
     }
     
     .posts-header {
@@ -1224,4 +1264,362 @@
 
 [data-theme="dark"] .password-toggle-btn:hover {
     color: #c0392b !important;
+}
+
+/* Comment Moderation Styles - Enhanced Professional Design */
+.comments-section {
+    margin-top: 2rem;
+    position: relative;
+}
+
+.comments-section::before {
+    content: '';
+    position: absolute;
+    top: -1rem;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, var(--primary-color), transparent);
+    border-radius: 2px;
+}
+
+/* Content Header for Comments */
+.content-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 2rem;
+    flex-wrap: wrap;
+    gap: 1rem;
+}
+
+.content-header h2 {
+    margin: 0;
+    color: var(--text-color);
+    font-size: 1.8rem;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.content-header h2 i {
+    color: var(--primary-color);
+    font-size: 1.6rem;
+}
+
+/* Enhanced Refresh Button - Green and Prominent */
+#refresh-comments {
+    background: linear-gradient(135deg, #27ae60, #2ecc71);
+    color: white;
+    border: none;
+    padding: 0.75rem 1.5rem;
+    border-radius: 8px;
+    font-weight: 600;
+    font-size: 0.95rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 4px rgba(46, 204, 113, 0.3);
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+#refresh-comments:hover {
+    background: linear-gradient(135deg, #229954, #27ae60);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(46, 204, 113, 0.4);
+}
+
+#refresh-comments:active {
+    transform: translateY(0);
+}
+
+#refresh-comments i {
+    font-size: 1rem;
+}
+
+/* Enhanced Filters Section - Modern Design */
+.comments-filters {
+    display: flex;
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+    flex-wrap: wrap;
+    align-items: center;
+    background: linear-gradient(135deg, var(--card-background), var(--background-color));
+    padding: 1.5rem;
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    border: 1px solid var(--border-color);
+    position: relative;
+}
+
+.comments-filters::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, var(--primary-color), #c0392b);
+    border-radius: 12px 12px 0 0;
+}
+
+.comments-filters select {
+    min-width: 250px;
+    padding: 0.875rem 1.25rem;
+    border: 2px solid var(--border-color);
+    border-radius: 10px;
+    background: var(--background-color);
+    color: var(--text-color);
+    font-size: 0.95rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.comments-filters select:focus {
+    outline: none;
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 3px rgba(231, 76, 60, 0.15);
+    transform: translateY(-1px);
+}
+
+.comments-filters select:hover {
+    border-color: var(--primary-color);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+/* Enhanced Filter Button */
+#apply-comment-filters {
+    background: linear-gradient(135deg, var(--primary-color), #c0392b);
+    color: white;
+    border: none;
+    padding: 0.75rem 1.5rem;
+    border-radius: 8px;
+    font-weight: 600;
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    box-shadow: 0 2px 4px rgba(231, 76, 60, 0.3);
+}
+
+#apply-comment-filters:hover {
+    background: linear-gradient(135deg, #c0392b, #a93226);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(231, 76, 60, 0.4);
+}
+
+#apply-comment-filters:active {
+    transform: translateY(0);
+}
+
+/* Enhanced Table Container - Professional Full Width */
+.comments-container {
+    margin: 0;
+    width: 100%;
+    background: var(--card-background);
+    border-radius: 12px;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+    border: 1px solid var(--border-color);
+    overflow: hidden;
+}
+
+.comments-table-container {
+    overflow-x: auto;
+    background: transparent;
+    border-radius: 0;
+    padding: 0;
+    box-shadow: none;
+    border: none;
+    max-width: 100%;
+}
+
+.comments-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 0;
+    background: var(--card-background);
+}
+
+.comments-table th,
+.comments-table td {
+    padding: 1.2rem 1.5rem;
+    text-align: left;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+    vertical-align: top;
+}
+
+.comments-table th {
+    background: linear-gradient(135deg, var(--primary-color), #c0392b);
+    color: white;
+    font-weight: 700;
+    text-transform: uppercase;
+    font-size: 0.85rem;
+    letter-spacing: 1px;
+    border-bottom: none;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.comments-table tbody tr {
+    transition: all 0.3s ease;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.comments-table tbody tr:hover {
+    background: linear-gradient(90deg, rgba(231, 76, 60, 0.05), transparent);
+    transform: translateX(2px);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.comments-table tbody tr:last-child {
+    border-bottom: none;
+}
+
+/* Enhanced Comment Content Cell */
+.comment-content {
+    max-width: 400px;
+    min-width: 250px;
+}
+
+.comment-text {
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    line-height: 1.6;
+    color: var(--text-color);
+    font-size: 0.95rem;
+    background: rgba(0, 0, 0, 0.02);
+    padding: 0.75rem;
+    border-radius: 8px;
+    border-left: 3px solid var(--primary-color);
+    font-family: 'Segoe UI', system-ui, sans-serif;
+}
+
+/* Enhanced Post Link */
+.post-link {
+    color: var(--primary-color);
+    text-decoration: none;
+    font-weight: 600;
+    transition: all 0.2s ease;
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+    display: inline-block;
+}
+
+.post-link:hover {
+    background: var(--primary-color);
+    color: white;
+    text-decoration: none;
+    transform: translateY(-1px);
+}
+
+/* Enhanced Delete Button - Matching Posts Tab Style */
+.comments-table .delete-btn {
+    background: linear-gradient(135deg, #e74c3c, #c0392b);
+    color: white;
+    border: none;
+    padding: 0.5rem 1rem;
+    border-radius: 6px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    box-shadow: 0 2px 4px rgba(231, 76, 60, 0.3);
+    min-width: 100px;
+}
+
+.comments-table .delete-btn:hover {
+    background: linear-gradient(135deg, #c0392b, #a93226);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(231, 76, 60, 0.4);
+}
+
+.comments-table .delete-btn:active {
+    transform: translateY(0);
+}
+
+.comments-table .delete-btn i {
+    font-size: 0.9rem;
+}
+
+/* Enhanced Comment Preview in Modal */
+.comment-preview-content {
+    background: linear-gradient(135deg, var(--background-color), var(--card-background));
+    padding: 1.5rem;
+    border-radius: 8px;
+    margin-top: 1rem;
+    border-left: 4px solid var(--primary-color);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+.comment-preview-content strong {
+    color: var(--primary-color);
+    font-weight: 600;
+}
+
+/* Empty State for Comments */
+.comments-empty-state {
+    text-align: center;
+    padding: 4rem 2rem;
+    background: var(--card-background);
+    border-radius: 12px;
+    border: 2px dashed var(--border-color);
+    margin-top: 2rem;
+}
+
+.comments-empty-state i {
+    font-size: 3rem;
+    color: var(--primary-color);
+    margin-bottom: 1rem;
+    opacity: 0.7;
+}
+
+.comments-empty-state h3 {
+    color: var(--text-color);
+    margin-bottom: 0.5rem;
+    font-size: 1.3rem;
+    font-weight: 600;
+}
+
+.comments-empty-state p {
+    color: var(--text-color);
+    opacity: 0.7;
+    font-size: 0.95rem;
+    margin: 0;
+}
+
+[data-theme="dark"] .comments-empty-state {
+    border-color: rgba(255, 255, 255, 0.1);
+}
+
+/* Loading state for comments table */
+.comments-loading {
+    text-align: center;
+    padding: 2rem;
+    color: var(--text-color);
+    opacity: 0.7;
+}
+
+.comments-loading i {
+    font-size: 1.5rem;
+    animation: spin 1s linear infinite;
+    margin-right: 0.5rem;
 }
