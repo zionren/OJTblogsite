@@ -347,7 +347,15 @@ class PostPage {
         
         // Hide iframe initially and show thumbnail
         iframe.style.display = 'none';
-        videoContainer.insertBefore(thumbnailOverlay, iframe);
+        
+        // Find the video-container div and insert thumbnail
+        const videoInnerContainer = videoContainer.querySelector('.video-container');
+        if (videoInnerContainer) {
+            videoInnerContainer.insertBefore(thumbnailOverlay, iframe);
+        } else {
+            // Fallback: just append to the main container
+            videoContainer.appendChild(thumbnailOverlay);
+        }
     }
 
     setThumbnailBackground(element, videoId) {

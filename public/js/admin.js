@@ -52,7 +52,8 @@ class AdminDashboard {
                 console.log(`Tab clicked: ${tabName}`);
                 if (tabName) {
                     this.switchTab(tabName);
-                } else {
+                } 
+                else {
                     console.warn('No tabName found on clicked element');
                 }
             });
