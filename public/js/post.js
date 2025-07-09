@@ -289,9 +289,7 @@ class PostPage {
             position: relative;
             width: 100%;
             height: 400px;
-            background-image: url('https://img.youtube.com/vi/${videoId}/maxresdefault.jpg');
-            background-size: cover;
-            background-position: center;
+            background-color: #1a1a1a;
             cursor: pointer;
             display: flex;
             align-items: center;
@@ -299,6 +297,9 @@ class PostPage {
             border-radius: 8px;
             overflow: hidden;
         `;
+        
+        // Try different thumbnail qualities in order of preference
+        this.setThumbnailBackground(thumbnailOverlay, videoId);
         
         // Create play button
         const playButton = document.createElement('div');
@@ -347,6 +348,46 @@ class PostPage {
         // Hide iframe initially and show thumbnail
         iframe.style.display = 'none';
         videoContainer.insertBefore(thumbnailOverlay, iframe);
+    }
+
+    setThumbnailBackground(element, videoId) {
+        // Try thumbnails in order of quality/availability
+        const thumbnailQualities = [
+            'hqdefault',      // High quality - most reliable
+            'mqdefault',      // Medium quality
+            'default',        // Standard quality - always available
+            'maxresdefault'   // Max quality - sometimes not available
+        ];
+        
+        let currentIndex = 0;
+        
+        const tryThumbnail = () => {
+            if (currentIndex >= thumbnailQualities.length) {
+                // If all thumbnails fail, use a solid background
+                element.style.background = 'linear-gradient(45deg, #2c3e50, #34495e)';
+                return;
+            }
+            
+            const quality = thumbnailQualities[currentIndex];
+            const img = new Image();
+            
+            img.onload = () => {
+                // Thumbnail loaded successfully
+                element.style.backgroundImage = `url('https://img.youtube.com/vi/${videoId}/${quality}.jpg')`;
+                element.style.backgroundSize = 'cover';
+                element.style.backgroundPosition = 'center';
+            };
+            
+            img.onerror = () => {
+                // This thumbnail failed, try the next one
+                currentIndex++;
+                tryThumbnail();
+            };
+            
+            img.src = `https://img.youtube.com/vi/${videoId}/${quality}.jpg`;
+        };
+        
+        tryThumbnail();
     }
 
     getYouTubeEmbedUrl(url) {

@@ -79,7 +79,7 @@ class BlogApp {
                 ${post.youtube_url ? `
                     <div class="post-card-video" id="video-container-${post.id}">
                         <div class="video-thumbnail" onclick="window.blogApp.loadVideo('${post.youtube_url}', ${post.id})"
-                             style="position: relative; width: 100%; height: 200px; background-image: url('https://img.youtube.com/vi/${this.extractYouTubeId(post.youtube_url)}/maxresdefault.jpg'); background-size: cover; background-position: center; cursor: pointer; display: flex; align-items: center; justify-content: center; border-radius: 8px; overflow: hidden;">
+                             style="position: relative; width: 100%; height: 200px; background-image: url('https://img.youtube.com/vi/${this.extractYouTubeId(post.youtube_url)}/hqdefault.jpg'); background-size: cover; background-position: center; background-color: #1a1a1a; cursor: pointer; display: flex; align-items: center; justify-content: center; border-radius: 8px; overflow: hidden;">
                             <div style="width: 60px; height: 60px; background: rgba(0, 0, 0, 0.8); border-radius: 50%; display: flex; align-items: center; justify-content: center; transition: all 0.3s ease;">
                                 <i class="fas fa-play" style="color: white; font-size: 20px; margin-left: 3px;"></i>
                             </div>

@@ -409,14 +409,19 @@ class AdminDashboard {
         // If no data, show at least a week with some placeholder data
         if (visits.length === 0 || visits.every(v => v === 0)) {
             const today = new Date();
-            for (let i = 6; i >= 0; i--) {
-                const date = new Date(today);
-                date.setDate(date.getDate() - i);
-                labels.push(date.toLocaleDateString('en-US', { 
-                    month: 'short', 
-                    day: 'numeric' 
-                }));
-                visits.push(i === 0 ? 1 : 0); // At least one visit today for demo
+            try {
+                for (let i = 6; i >= 0; i--) {
+                    const date = new Date(today);
+                    date.setDate(date.getDate() - i);
+                    labels.push(date.toLocaleDateString('en-US', { 
+                        month: 'short', 
+                        day: 'numeric' 
+                    }));
+                    visits.push(i === 0 ? 1 : 0); // At least one visit today for demo
+                }
+            } 
+            catch (error) {
+                console.error('Error generating placeholder daily visits data:', error);
             }
         }
 
@@ -530,7 +535,8 @@ class AdminDashboard {
             
             this.renderPosts(data.posts);
 
-        } catch (error) {
+        } 
+        catch (error) {
             console.error('Error loading posts:', error);
             this.showError('Failed to load posts');
         }
@@ -584,29 +590,50 @@ class AdminDashboard {
         const title = document.getElementById('post-title').value.trim();
         const content = document.getElementById('post-content').value.trim();
         
-        if (!title) {
-            this.showNotificationModal('Post title is required', 'error');
+        try {
+            if (!title) {
+            throw new Error('Post title is required');
+            }
+        } 
+        catch (error) {
+            this.showNotificationModal(error.message, 'error');
             return false;
         }
-        
-        if (!content) {
-            this.showNotificationModal('Post content is required', 'error');
+
+        try {
+            if (!content) {
+            throw new Error('Post content is required');
+            }
+        } 
+        catch (error) {
+            this.showNotificationModal(error.message, 'error');
             return false;
         }
-        
-        // Optional: validate YouTube URL format if provided
-        const youtubeUrl = document.getElementById('post-youtube-url').value.trim();
-        if (youtubeUrl && !this.isValidYouTubeUrl(youtubeUrl)) {
-            this.showNotificationModal('Please enter a valid YouTube URL', 'error');
+
+        try {
+            const youtubeUrl = document.getElementById('post-youtube-url').value.trim();
+            if (youtubeUrl && !this.isValidYouTubeUrl(youtubeUrl)) {
+            throw new Error('Please enter a valid YouTube URL');
+            }
+        } 
+        catch (error) {
+            this.showNotificationModal(error.message, 'error');
             return false;
         }
-        
+        // else clause to ensure we don't return false if everything is valid
+        console.log('Post form validation passed'); // debugging purposes only
         return true;
     }
     
     isValidYouTubeUrl(url) {
-        const youtubeRegex = /^(https?:\/\/)?(www\.)?(youtube\.com|youtu\.be)\/.+$/;
-        return youtubeRegex.test(url);
+        try {
+            const youtubeRegex = /^(https?:\/\/)?(www\.)?(youtube\.com|youtu\.be)\/.+$/;
+            return youtubeRegex.test(url);
+        }
+        catch (error) {
+            console.error ("Didn't catch the url:", url, error);
+            return false;
+        }
     }
 
     async savePost() {
@@ -656,7 +683,8 @@ class AdminDashboard {
                 this.switchTab('posts');
             }
 
-        } catch (error) {
+        } 
+        catch (error) {
             console.error('Error saving post:', error);
             this.showError('Failed to save post');
         }
@@ -691,16 +719,23 @@ class AdminDashboard {
             document.getElementById('submit-post').textContent = 'Update Post';
             document.getElementById('cancel-edit').style.display = 'block';
 
-        } catch (error) {
+        } 
+        catch (error) {
             console.error('Error loading post for edit:', error);
             this.showError('Failed to load post for editing');
         }
     }
 
     async deletePost(postId) {
-        // Store the post ID for the confirmation
-        this.postToDelete = postId;
-        this.showDeleteModal();
+        try {
+            // Store the post ID for the confirmation
+            this.postToDelete = postId;
+            this.showDeleteModal();
+        }
+        catch (error) {
+            console.error("Cannot delete post:", error);
+            this.showError('Failed to prepare post for deletion');
+        }
     }
 
     showDeleteModal() {
@@ -741,7 +776,8 @@ class AdminDashboard {
             
             this.loadPosts();
 
-        } catch (error) {
+        } 
+        catch (error) {
             console.error('Error deleting post:', error);
             this.hideDeleteModal();
             this.showError('Failed to delete post');
@@ -855,9 +891,16 @@ class AdminDashboard {
                 const isMobile = window.innerWidth <= 768;
                 const isSmallMobile = window.innerWidth <= 480;
                 
-                if (chart.options && chart.options.plugins && chart.options.plugins.legend) {
-                    chart.options.plugins.legend.display = !isSmallMobile;
-                    chart.options.plugins.legend.labels.font.size = isMobile ? 10 : 12;
+                try {
+                    if (chart.options && chart.options.plugins && chart.options.plugins.legend) {
+                        chart.options.plugins.legend.display = !isSmallMobile;
+                        chart.options.plugins.legend.labels.font.size = isMobile ? 10 : 12;
+                    }
+                }
+                catch (error) {
+                    console.error("Failed to update the chart:", error);
+                    // do not let the errors break the dashboard itself
+                    this.showNotificationModal('Failed to update chart options. Please try refreshing the page.', 'error');
                 }
                 
                 if (chart.options && chart.options.scales) {
@@ -884,12 +927,15 @@ class AdminDashboard {
             const payload = JSON.parse(atob(this.token.split('.')[1]));
             const now = Date.now() / 1000;
             return payload.exp > now;
-        } catch (error) {
+        } 
+        catch (error) {
+            console.error("Failed to validate post token:", error);
+            // If we can't parse the token, treat it as invalid
             return false;
         }
     }
 
-    // Debug method to check current state
+    // Debugging in browser console in case of possible errors in the situation
     debugState() {
         console.log('=== ADMIN DASHBOARD DEBUG STATE ===');
         console.log('Token:', this.token ? 'present' : 'missing');
