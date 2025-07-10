@@ -1434,40 +1434,67 @@
 }
 
 .comments-table-container {
-    overflow-x: auto;
-    background: transparent;
-    border-radius: 0;
-    padding: 0;
-    box-shadow: none;
-    border: none;
-    max-width: 100%;
+    background-color: var(--surface-color);
+    border-radius: 0.5rem;
+    box-shadow: var(--shadow);
+    border: 1px solid var(--border-color);
+    color: #e74c3c !important; /* Red text for better visibility */
+    max-height: 600px; /* Set maximum height for scrolling */
+    overflow-y: auto; /* Enable vertical scrolling */
+    overflow-x: auto; /* Enable horizontal scrolling if needed */
+    width: 100%;
+}
+
+/* Custom scrollbar styling for comments table */
+.comments-table-container::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+.comments-table-container::-webkit-scrollbar-track {
+    background: var(--background-color);
+    border-radius: 4px;
+}
+
+.comments-table-container::-webkit-scrollbar-thumb {
+    background: var(--primary-color);
+    border-radius: 4px;
+    opacity: 0.7;
+}
+
+.comments-table-container::-webkit-scrollbar-thumb:hover {
+    background: var(--accent-color);
 }
 
 .comments-table {
     width: 100%;
     border-collapse: collapse;
     margin: 0;
+    table-layout: fixed; /* For better column width control */
+    min-width: 1000px; /* Expanded width for wider table */
     background: var(--card-background);
 }
 
 .comments-table th,
 .comments-table td {
-    padding: 1.2rem 1.5rem;
+    padding: 1rem;
     text-align: left;
-    border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+    border-bottom: 1px solid var(--border-color);
+    color: #e74c3c !important; /* Red text for better visibility */
     vertical-align: top;
 }
 
 .comments-table th {
-    background: linear-gradient(135deg, var(--primary-color), #c0392b);
-    color: white;
-    font-weight: 700;
+    background-color: var(--background-color);
+    font-weight: 600;
+    color: #e74c3c !important; /* Red text for better visibility */
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
     text-transform: uppercase;
     font-size: 0.85rem;
     letter-spacing: 1px;
-    border-bottom: none;
-    position: sticky;
-    top: 0;
     z-index: 10;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
