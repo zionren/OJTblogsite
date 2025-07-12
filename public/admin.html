@@ -88,6 +88,10 @@
                         <i class="fas fa-comments"></i>
                         <span>Comments</span>
                     </a>
+                    <a href="#" class="sidebar-link tab-btn" data-tab="activity-logs">
+                        <i class="fas fa-history"></i>
+                        <span>Activity Logs</span>
+                    </a>
                     
                     <!-- Divider -->
                     <div class="sidebar-divider"></div>
@@ -251,6 +255,127 @@
                                         </tbody>
                                     </table>
                                 </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Activity Logs Tab -->
+                <div class="tab-content" id="activity-logs-tab">
+                    <div class="dashboard-content">
+                        <div class="content-header">
+                            <h2><i class="fas fa-history"></i> Activity Logs</h2>
+                            <div class="content-header-actions">
+                                <button class="btn-secondary" id="refresh-logs">
+                                    <i class="fas fa-sync-alt"></i> Refresh
+                                </button>
+                                <button class="btn-secondary" id="export-logs">
+                                    <i class="fas fa-download"></i> Export
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Activity Stats Cards -->
+                        <div class="activity-stats-grid">
+                            <div class="stat-card">
+                                <div class="stat-icon">
+                                    <i class="fas fa-list"></i>
+                                </div>
+                                <div class="stat-info">
+                                    <h3 id="total-logs-count">0</h3>
+                                    <p>Total Activities</p>
+                                </div>
+                            </div>
+                            <div class="stat-card">
+                                <div class="stat-icon">
+                                    <i class="fas fa-plus"></i>
+                                </div>
+                                <div class="stat-info">
+                                    <h3 id="create-actions-count">0</h3>
+                                    <p>Create Actions</p>
+                                </div>
+                            </div>
+                            <div class="stat-card">
+                                <div class="stat-icon">
+                                    <i class="fas fa-edit"></i>
+                                </div>
+                                <div class="stat-info">
+                                    <h3 id="update-actions-count">0</h3>
+                                    <p>Update Actions</p>
+                                </div>
+                            </div>
+                            <div class="stat-card">
+                                <div class="stat-icon">
+                                    <i class="fas fa-trash"></i>
+                                </div>
+                                <div class="stat-info">
+                                    <h3 id="delete-actions-count">0</h3>
+                                    <p>Delete Actions</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Filters -->
+                        <div class="logs-filters">
+                            <div class="filter-group">
+                                <label for="log-action-filter">Action:</label>
+                                <select id="log-action-filter" class="form-control">
+                                    <option value="">All Actions</option>
+                                    <option value="LOGIN">Login</option>
+                                    <option value="CREATE">Create</option>
+                                    <option value="UPDATE">Update</option>
+                                    <option value="DELETE">Delete</option>
+                                </select>
+                            </div>
+                            <div class="filter-group">
+                                <label for="log-entity-filter">Entity Type:</label>
+                                <select id="log-entity-filter" class="form-control">
+                                    <option value="">All Types</option>
+                                    <option value="user">User</option>
+                                    <option value="post">Post</option>
+                                    <option value="comment">Comment</option>
+                                </select>
+                            </div>
+                            <div class="filter-group">
+                                <label for="log-user-filter">User Email:</label>
+                                <input type="text" id="log-user-filter" class="form-control" placeholder="Filter by user email...">
+                            </div>
+                            <button class="btn-primary btn-small" id="apply-log-filters">
+                                <i class="fas fa-filter"></i> Apply Filters
+                            </button>
+                            <button class="btn-secondary btn-small" id="clear-log-filters">
+                                <i class="fas fa-times"></i> Clear
+                            </button>
+                        </div>
+
+                        <!-- Activity Logs Table -->
+                        <div class="logs-container">
+                            <div class="logs-table-container">
+                                <table class="logs-table">
+                                    <thead>
+                                        <tr>
+                                            <th width="12%">Timestamp</th>
+                                            <th width="15%">User</th>
+                                            <th width="10%">Action</th>
+                                            <th width="12%">Entity Type</th>
+                                            <th width="8%">Entity ID</th>
+                                            <th width="25%">Details</th>
+                                            <th width="18%">IP / User Agent</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="logs-table-body">
+                                        <!-- Activity logs will be loaded here -->
+                                    </tbody>
+                                </table>
+                            </div>
+                            <div class="logs-pagination">
+                                <button class="btn-secondary" id="logs-prev-page" disabled>
+                                    <i class="fas fa-chevron-left"></i> Previous
+                                </button>
+                                <span id="logs-pagination-info">Page 1 of 1</span>
+                                <button class="btn-secondary" id="logs-next-page" disabled>
+                                    Next <i class="fas fa-chevron-right"></i>
+                                </button>
                             </div>
                         </div>
                     </div>

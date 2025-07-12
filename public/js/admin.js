@@ -12,6 +12,10 @@ class AdminDashboard {
         this.cachedComments = null;
         this.deletingCommentId = null;
         
+        // Activity logs pagination
+        this.currentLogsPage = 1;
+        this.totalLogsPages = 1;
+        
         console.log('AdminDashboard constructor - token:', this.token ? 'present' : 'missing');
         console.log('AdminDashboard constructor - initial cache state:', {
             analytics: this.cachedAnalytics,
@@ -168,6 +172,9 @@ class AdminDashboard {
             }
         });
 
+        // Activity logs event listeners
+        this.setupActivityLogsEventListeners();
+
         // Window resize handler for charts responsiveness
         let resizeTimeout;
         window.addEventListener('resize', () => {
@@ -254,6 +261,10 @@ class AdminDashboard {
                         this.showCommentsLoading();
                         this.loadComments();
                     }
+                } 
+                else if (tabName == 'activity-logs') {
+                    console.log('Loading activity logs tab');
+                    this.loadActivityLogs(1);
                 } else {
                     console.log(`No data loading needed for ${tabName} tab`);
                 }
@@ -1095,6 +1106,242 @@ class AdminDashboard {
                 </td>
             </tr>
         `;
+    }
+
+    // Activity Logs functionality
+    async loadActivityLogs(page = 1, filters = {}) {
+        this.showLoading();
+        try {
+            const queryParams = new URLSearchParams({
+                page: page.toString(),
+                limit: '50',
+                ...filters
+            });
+
+            const response = await fetch(`/api/admin/activity-logs?${queryParams}`, {
+                headers: {
+                    'Authorization': `Bearer ${this.token}`
+                }
+            });
+
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+
+            const data = await response.json();
+            this.renderActivityLogs(data.logs);
+            this.updateLogsPagination(data.pagination);
+            
+            // Also load stats when loading logs
+            await this.loadActivityStats();
+        } catch (error) {
+            console.error('Error loading activity logs:', error);
+            this.showError('Failed to load activity logs');
+        } finally {
+            this.hideLoading();
+        }
+    }
+
+    async loadActivityStats() {
+        try {
+            const response = await fetch('/api/admin/activity-stats', {
+                headers: {
+                    'Authorization': `Bearer ${this.token}`
+                }
+            });
+
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+
+            const stats = await response.json();
+            this.renderActivityStats(stats);
+        } catch (error) {
+            console.error('Error loading activity stats:', error);
+        }
+    }
+
+    renderActivityLogs(logs) {
+        const tbody = document.getElementById('logs-table-body');
+        
+        if (!logs || logs.length === 0) {
+            tbody.innerHTML = `
+                <tr>
+                    <td colspan="7" class="logs-empty-state">
+                        <i class="fas fa-history"></i>
+                        <h3>No Activity Logs Found</h3>
+                        <p>No activities match your current filters.</p>
+                    </td>
+                </tr>
+            `;
+            return;
+        }
+
+        tbody.innerHTML = logs.map(log => {
+            const timestamp = new Date(log.timestamp).toLocaleString();
+            const details = log.details ? JSON.stringify(log.details, null, 2) : '';
+            const userAgent = log.user_agent || 'Unknown';
+            const ipAddress = log.ip_address || 'Unknown';
+            
+            return `
+                <tr>
+                    <td class="log-timestamp">${timestamp}</td>
+                    <td class="log-user">${log.user_email || 'System'}</td>
+                    <td><span class="log-action ${log.action}">${log.action}</span></td>
+                    <td><span class="log-entity-type">${log.entity_type}</span></td>
+                    <td class="log-entity-id">${log.entity_id || '-'}</td>
+                    <td class="log-details">
+                        ${details ? `<pre>${details}</pre>` : '-'}
+                    </td>
+                    <td class="log-ip-agent">
+                        <span class="log-ip">${ipAddress}</span>
+                        <span class="log-agent" title="${userAgent}">${userAgent}</span>
+                    </td>
+                </tr>
+            `;
+        }).join('');
+    }
+
+    renderActivityStats(stats) {
+        document.getElementById('total-logs-count').textContent = stats.totalLogs;
+        
+        // Find specific action counts
+        const createActions = stats.actionStats.find(s => s.action === 'CREATE');
+        const updateActions = stats.actionStats.find(s => s.action === 'UPDATE');
+        const deleteActions = stats.actionStats.find(s => s.action === 'DELETE');
+        
+        document.getElementById('create-actions-count').textContent = createActions ? createActions.count : 0;
+        document.getElementById('update-actions-count').textContent = updateActions ? updateActions.count : 0;
+        document.getElementById('delete-actions-count').textContent = deleteActions ? deleteActions.count : 0;
+    }
+
+    updateLogsPagination(pagination) {
+        const prevBtn = document.getElementById('logs-prev-page');
+        const nextBtn = document.getElementById('logs-next-page');
+        const info = document.getElementById('logs-pagination-info');
+        
+        prevBtn.disabled = pagination.currentPage <= 1;
+        nextBtn.disabled = pagination.currentPage >= pagination.totalPages;
+        
+        info.textContent = `Page ${pagination.currentPage} of ${pagination.totalPages} (${pagination.totalLogs} total)`;
+        
+        // Store current pagination state
+        this.currentLogsPage = pagination.currentPage;
+        this.totalLogsPages = pagination.totalPages;
+    }
+
+    setupActivityLogsEventListeners() {
+        // Refresh logs button
+        document.getElementById('refresh-logs')?.addEventListener('click', () => {
+            this.loadActivityLogs(1);
+        });
+
+        // Apply filters button
+        document.getElementById('apply-log-filters')?.addEventListener('click', () => {
+            const filters = this.getLogFilters();
+            this.loadActivityLogs(1, filters);
+        });
+
+        // Clear filters button
+        document.getElementById('clear-log-filters')?.addEventListener('click', () => {
+            this.clearLogFilters();
+            this.loadActivityLogs(1);
+        });
+
+        // Pagination buttons
+        document.getElementById('logs-prev-page')?.addEventListener('click', () => {
+            if (this.currentLogsPage > 1) {
+                const filters = this.getLogFilters();
+                this.loadActivityLogs(this.currentLogsPage - 1, filters);
+            }
+        });
+
+        document.getElementById('logs-next-page')?.addEventListener('click', () => {
+            if (this.currentLogsPage < this.totalLogsPages) {
+                const filters = this.getLogFilters();
+                this.loadActivityLogs(this.currentLogsPage + 1, filters);
+            }
+        });
+
+        // Export logs button
+        document.getElementById('export-logs')?.addEventListener('click', () => {
+            this.exportActivityLogs();
+        });
+    }
+
+    getLogFilters() {
+        const actionFilter = document.getElementById('log-action-filter')?.value || '';
+        const entityFilter = document.getElementById('log-entity-filter')?.value || '';
+        const userFilter = document.getElementById('log-user-filter')?.value || '';
+        
+        const filters = {};
+        if (actionFilter) filters.action = actionFilter;
+        if (entityFilter) filters.entity_type = entityFilter;
+        if (userFilter) filters.user_email = userFilter;
+        
+        return filters;
+    }
+
+    clearLogFilters() {
+        document.getElementById('log-action-filter').value = '';
+        document.getElementById('log-entity-filter').value = '';
+        document.getElementById('log-user-filter').value = '';
+    }
+
+    async exportActivityLogs() {
+        try {
+            const filters = this.getLogFilters();
+            const queryParams = new URLSearchParams({
+                limit: '10000', // Large limit for export
+                ...filters
+            });
+
+            const response = await fetch(`/api/admin/activity-logs?${queryParams}`, {
+                headers: {
+                    'Authorization': `Bearer ${this.token}`
+                }
+            });
+
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+
+            const data = await response.json();
+            this.downloadLogsAsCSV(data.logs);
+        } catch (error) {
+            console.error('Error exporting activity logs:', error);
+            this.showError('Failed to export activity logs');
+        }
+    }
+
+    downloadLogsAsCSV(logs) {
+        const headers = ['Timestamp', 'User Email', 'Action', 'Entity Type', 'Entity ID', 'Details', 'IP Address', 'User Agent'];
+        
+        const csvContent = [
+            headers.join(','),
+            ...logs.map(log => [
+                new Date(log.timestamp).toISOString(),
+                log.user_email || '',
+                log.action,
+                log.entity_type,
+                log.entity_id || '',
+                JSON.stringify(log.details || {}),
+                log.ip_address || '',
+                `"${(log.user_agent || '').replace(/"/g, '""')}"`
+            ].join(','))
+        ].join('\n');
+
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement('a');
+        const url = URL.createObjectURL(blob);
+        
+        link.setAttribute('href', url);
+        link.setAttribute('download', `activity-logs-${new Date().toISOString().split('T')[0]}.csv`);
+        link.style.visibility = 'hidden';
+        
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
     }
 
     // Notification and error handling methods
