@@ -140,7 +140,7 @@
     background-color: var(--surface-color);
     box-shadow: var(--shadow);
     padding: 1rem 0;
-    color: #e74c3c !important; /* Red text for better visibility */
+    color: #65d1f5 !important; /* Blue text for better visibility */
 }
 
 .admin-header-content {
@@ -154,7 +154,7 @@
 }
 
 .admin-header h1 {
-    color: #e74c3c !important; /* Red text for better visibility */
+    color: #65d1f5 !important; /* Blue text for better visibility */
     font-size: 1.8rem;
     flex: 1; /* Take up remaining space */
     margin-left: 1rem; /* Add some space after sidebar toggle */
@@ -192,18 +192,18 @@
     cursor: pointer;
     font-family: inherit;
     font-size: 1rem;
-    color: #e74c3c !important; /* Red text for better visibility */
+    color: #65d1f5 !important; /* Blue text for better visibility */
     transition: var(--transition);
     border-bottom: 2px solid transparent;
 }
 
 .tab-btn:hover {
-    color: #c0392b !important; /* Darker red on hover */
+    color: #4fc3e8 !important; /* Darker blue on hover */
 }
 
 .tab-btn.active {
-    color: #e74c3c !important; /* Red text for better visibility */
-    border-bottom-color: #e74c3c;
+    color: #65d1f5 !important; /* Blue text for better visibility */
+    border-bottom-color: #65d1f5;
 }
 
 .tab-content {
@@ -223,7 +223,7 @@
     background-color: var(--surface-color);
     border-radius: 0.5rem;
     border: 1px solid var(--border-color);
-    color: #e74c3c !important; /* Red text for better visibility */
+    color: #65d1f5 !important; /* Blue text for better visibility */
 }
 
 .filter-group {
@@ -234,7 +234,7 @@
 
 .filter-group label {
     font-weight: 600;
-    color: #e74c3c !important; /* Red text for better visibility */
+    color: #65d1f5 !important; /* Blue text for better visibility */
 }
 
 .filter-group input {
@@ -242,7 +242,7 @@
     border: 1px solid var(--border-color);
     border-radius: 0.25rem;
     background-color: var(--background-color);
-    color: #e74c3c !important; /* Red text for better visibility */
+    color: #65d1f5 !important; /* Blue text for better visibility */
 }
 
 .analytics-grid {
@@ -260,11 +260,11 @@
     box-shadow: var(--shadow);
     text-align: center;
     border: 1px solid var(--border-color);
-    color: #e74c3c !important; /* Red text for better visibility */
+    color: #65d1f5 !important; /* Blue text for better visibility */
 }
 
 .stat-card h3 {
-    color: #e74c3c !important; /* Red text for better visibility */
+    color: #65d1f5 !important; /* Blue text for better visibility */
     font-size: 0.9rem;
     margin-bottom: 0.5rem;
     text-transform: uppercase;
@@ -274,7 +274,7 @@
 .stat-value {
     font-size: 2.5rem;
     font-weight: 700;
-    color: #e74c3c !important; /* Red text for better visibility */
+    color: #65d1f5 !important; /* Blue text for better visibility */
 }
 
 .charts-grid {
@@ -295,7 +295,7 @@
     position: relative;
     width: 100%;
     overflow: hidden;
-    color: #e74c3c !important; /* Red text for better visibility */
+    color: #65d1f5 !important; /* Blue text for better visibility */
 }
 
 .chart-container canvas {
@@ -306,9 +306,9 @@
     margin: 0 auto;
 }
 
-/* Force Chart.js text colors to red */
+/* Force Chart.js text colors to blue */
 .chart-container * {
-    color: #e74c3c !important;
+    color: #65d1f5 !important;
 }
 
 /* Chart.js specific selectors */
@@ -318,22 +318,22 @@
 .chart-container .chartjs-legend *,
 .chart-container .chartjs-axis-labels,
 .chart-container .chartjs-axis-labels * {
-    color: #e74c3c !important;
-    fill: #e74c3c !important;
+    color: #65d1f5 !important;
+    fill: #65d1f5 !important;
 }
 
 /* Additional Chart.js overrides */
 .chart-container canvas text {
-    fill: #e74c3c !important;
+    fill: #65d1f5 !important;
 }
 
 .chart-container .chartjs-render-monitor {
-    color: #e74c3c !important;
+    color: #65d1f5 !important;
 }
 
 .chart-container h3 {
     margin-bottom: 1rem;
-    color: #e74c3c !important; /* Red text for better visibility */
+    color: #65d1f5 !important; /* Blue text for better visibility */
     text-align: center;
     font-size: 1.1rem;
 }
@@ -347,7 +347,7 @@
 }
 
 .posts-header h2 {
-    color: #e74c3c !important; /* Red text for better visibility */
+    color: #65d1f5 !important; /* Blue text for better visibility */
 }
 
 .posts-table-container {
@@ -355,7 +355,7 @@
     border-radius: 0.5rem;
     box-shadow: var(--shadow);
     border: 1px solid var(--border-color);
-    color: #e74c3c !important; /* Red text for better visibility */
+    color: #65d1f5 !important; /* Blue text for better visibility */
     max-height: 600px; /* Set maximum height for scrolling */
     overflow-y: auto; /* Enable vertical scrolling */
     overflow-x: auto; /* Enable horizontal scrolling if needed */
@@ -395,7 +395,7 @@
 .posts-table {
     width: 100%;
     border-collapse: collapse;
-    color: #e74c3c !important; /* Red text for better visibility */
+    color: #65d1f5 !important; /* Blue text for better visibility */
 }
 
 .posts-table th,
@@ -403,13 +403,13 @@
     padding: 1rem;
     text-align: left;
     border-bottom: 1px solid var(--border-color);
-    color: #e74c3c !important; /* Red text for better visibility */
+    color: #65d1f5 !important; /* Blue text for better visibility */
 }
 
 .posts-table th {
     background-color: var(--background-color);
     font-weight: 600;
-    color: #e74c3c !important; /* Red text for better visibility */
+    color: #65d1f5 !important; /* Blue text for better visibility */
     position: sticky;
     top: 0;
     z-index: 10;
@@ -476,12 +476,12 @@
     border-radius: 0.5rem;
     box-shadow: var(--shadow);
     border: 1px solid var(--border-color);
-    color: #e74c3c !important; /* Red text for better visibility */
+    color: #65d1f5 !important; /* Blue text for better visibility */
 }
 
 .post-form-container h2 {
     margin-bottom: 1.5rem;
-    color: #e74c3c !important; /* Red text for better visibility */
+    color: #65d1f5 !important; /* Blue text for better visibility */
 }
 
 .form-group {
@@ -492,7 +492,7 @@
     display: block;
     margin-bottom: 0.5rem;
     font-weight: 600;
-    color: #e74c3c !important; /* Red text for better visibility */
+    color: #65d1f5 !important; /* Blue text for better visibility */
 }
 
 .form-group input,
@@ -504,7 +504,7 @@
     font-family: inherit;
     font-size: 1rem;
     background-color: var(--background-color);
-    color: #e74c3c !important; /* Red text for better visibility */
+    color: #65d1f5 !important; /* Blue text for better visibility */
     transition: var(--transition);
 }
 
@@ -651,7 +651,7 @@
 .admin-sidebar .sidebar-link.active {
     background-color: rgba(255, 255, 255, 0.2);
     color: white;
-    border-right: 3px solid #e74c3c; /* Red accent */
+    border-right: 3px solid #65d1f5; /* Blue accent */
 }
 
 .admin-sidebar .sidebar-link.active:hover {
@@ -711,12 +711,12 @@
 
 /* Special styling for logout button */
 .admin-sidebar .logout-btn:hover {
-    background-color: rgba(231, 76, 60, 0.2);
-    color: #e74c3c;
+    background-color: rgba(101, 209, 245, 0.2);
+    color: #65d1f5;
 }
 
 .admin-sidebar .logout-btn:hover i {
-    color: #e74c3c;
+    color: #65d1f5;
 }
 
 /* Logout Modal Styles */
@@ -773,7 +773,7 @@
 }
 
 .modal-header h3 i {
-    color: #e74c3c;
+    color: #65d1f5;
 }
 
 .modal-body {
@@ -795,7 +795,7 @@
 }
 
 .btn-danger {
-    background-color: #e74c3c;
+    background-color: #65d1f5;
     color: white;
     border: none;
     padding: 0.75rem 1.5rem;
@@ -810,12 +810,12 @@
 }
 
 .btn-danger:hover {
-    background-color: #c0392b;
+    background-color: #4fc3e8;
 }
 
 .btn-danger:focus {
     outline: none;
-    box-shadow: 0 0 0 2px rgba(231, 76, 60, 0.2);
+    box-shadow: 0 0 0 2px rgba(101, 209, 245, 0.2);
 }
 
 .btn-secondary {
@@ -846,7 +846,7 @@
 }
 
 [data-theme="dark"] .modal-header h3 {
-    color: #e74c3c !important;
+    color: #65d1f5 !important;
 }
 
 [data-theme="dark"] .modal-body p {
@@ -860,7 +860,7 @@
 
 [data-theme="dark"] .btn-secondary:hover {
     background-color: #34495e;
-    border-color: #e74c3c;
+    border-color: #65d1f5;
 }
 
 /* Notification Modal Styles */
@@ -869,7 +869,7 @@
 }
 
 .notification-modal.error .modal-header h3 i {
-    color: #e74c3c;
+    color: #65d1f5;
 }
 
 .notification-modal .btn-primary {
@@ -905,11 +905,11 @@
 }
 
 .notification-modal.error .btn-primary {
-    background-color: #e74c3c;
+    background-color: #65d1f5;
 }
 
 .notification-modal.error .btn-primary:hover {
-    background-color: #c0392b;
+    background-color: #4fc3e8;
 }
 
 /* Mobile responsive modal */
@@ -1225,19 +1225,19 @@
     border: none;
     cursor: pointer;
     padding: 0.25rem;
-    color: #e74c3c !important; /* Always visible red color */
+    color: #65d1f5 !important; /* Always visible blue color */
     font-size: 1.1rem;
     z-index: 10;
     transition: color 0.2s ease;
 }
 
 .password-toggle-btn:hover {
-    color: #c0392b !important; /* Darker red on hover */
+    color: #4fc3e8 !important; /* Darker blue on hover */
 }
 
 .password-toggle-btn:focus {
     outline: none;
-    color: #c0392b !important;
+    color: #4fc3e8 !important;
 }
 
 .password-toggle-btn i {
@@ -1247,23 +1247,23 @@
 
 /* Ensure the eye icon is always visible on all themes */
 .login-form .password-toggle-btn {
-    color: #e74c3c !important;
+    color: #65d1f5 !important;
     opacity: 1 !important;
     visibility: visible !important;
     display: block !important;
 }
 
 .login-form .password-toggle-btn:hover {
-    color: #c0392b !important;
+    color: #4fc3e8 !important;
 }
 
 /* Dark theme overrides */
 [data-theme="dark"] .password-toggle-btn {
-    color: #e74c3c !important;
+    color: #65d1f5 !important;
 }
 
 [data-theme="dark"] .password-toggle-btn:hover {
-    color: #c0392b !important;
+    color: #4fc3e8 !important;
 }
 
 /* Comment Moderation Styles - Enhanced Professional Design */
@@ -1438,7 +1438,7 @@
     border-radius: 0.5rem;
     box-shadow: var(--shadow);
     border: 1px solid var(--border-color);
-    color: #e74c3c !important; /* Red text for better visibility */
+    color: #65d1f5 !important; /* Blue text for better visibility */
     max-height: 600px; /* Set maximum height for scrolling */
     overflow-y: auto; /* Enable vertical scrolling */
     overflow-x: auto; /* Enable horizontal scrolling if needed */
@@ -1480,14 +1480,14 @@
     padding: 1rem;
     text-align: left;
     border-bottom: 1px solid var(--border-color);
-    color: #e74c3c !important; /* Red text for better visibility */
+    color: #65d1f5 !important; /* Blue text for better visibility */
     vertical-align: top;
 }
 
 .comments-table th {
     background-color: var(--background-color);
     font-weight: 600;
-    color: #e74c3c !important; /* Red text for better visibility */
+    color: #65d1f5 !important; /* Blue text for better visibility */
     position: sticky;
     top: 0;
     z-index: 10;
@@ -1505,7 +1505,7 @@
 }
 
 .comments-table tbody tr:hover {
-    background: linear-gradient(90deg, rgba(231, 76, 60, 0.05), transparent);
+    background: linear-gradient(90deg, rgba(101, 209, 245, 0.05), transparent);
     transform: translateX(2px);
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
@@ -1821,20 +1821,20 @@
 }
 
 .logs-filters .btn-primary {
-    background: linear-gradient(135deg, var(--primary-color) 0%, #c0392b 100%);
+    background: linear-gradient(135deg, #65d1f5 0%, #4fc3e8 100%);
     color: white;
-    box-shadow: 0 2px 8px rgba(231, 76, 60, 0.2);
+    box-shadow: 0 2px 8px rgba(101, 209, 245, 0.2);
 }
 
 .logs-filters .btn-primary:hover {
     transform: translateY(-2px);
-    box-shadow: 0 4px 16px rgba(231, 76, 60, 0.3);
-    background: linear-gradient(135deg, #c0392b 0%, #a93226 100%);
+    box-shadow: 0 4px 16px rgba(101, 209, 245, 0.3);
+    background: linear-gradient(135deg, #4fc3e8 0%, #3bb3d6 100%);
 }
 
 .logs-filters .btn-primary:active {
     transform: translateY(0);
-    box-shadow: 0 2px 8px rgba(231, 76, 60, 0.2);
+    box-shadow: 0 2px 8px rgba(101, 209, 245, 0.2);
 }
 
 .logs-filters .btn-secondary {
@@ -1910,7 +1910,7 @@
 }
 
 .logs-table th {
-    background: linear-gradient(135deg, var(--primary-color) 0%, #c0392b 100%);
+    background: linear-gradient(135deg, #65d1f5 0%, #4fc3e8 100%);
     color: white;
     padding: 1rem 0.75rem;
     text-align: left;
@@ -1930,7 +1930,7 @@
 }
 
 .logs-table tbody tr:hover {
-    background-color: rgba(231, 76, 60, 0.05);
+    background-color: rgba(101, 209, 245, 0.05);
 }
 
 .log-timestamp {
