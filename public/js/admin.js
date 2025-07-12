@@ -1110,13 +1110,18 @@ class AdminDashboard {
 
     // Activity Logs functionality
     async loadActivityLogs(page = 1, filters = {}) {
-        this.showLoading();
+        console.log('Loading activity logs, page:', page, 'filters:', filters);
+        
         try {
+            this.showLoading();
+            
             const queryParams = new URLSearchParams({
                 page: page.toString(),
                 limit: '50',
                 ...filters
             });
+
+            console.log('Fetching activity logs with params:', queryParams.toString());
 
             const response = await fetch(`/api/admin/activity-logs?${queryParams}`, {
                 headers: {
@@ -1124,11 +1129,17 @@ class AdminDashboard {
                 }
             });
 
+            console.log('Activity logs response status:', response.status);
+
             if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
+                const errorText = await response.text();
+                console.error('Activity logs API error:', response.status, errorText);
+                throw new Error(`HTTP error! status: ${response.status}, message: ${errorText}`);
             }
 
             const data = await response.json();
+            console.log('Activity logs data received:', data);
+            
             this.renderActivityLogs(data.logs);
             this.updateLogsPagination(data.pagination);
             
@@ -1136,13 +1147,15 @@ class AdminDashboard {
             await this.loadActivityStats();
         } catch (error) {
             console.error('Error loading activity logs:', error);
-            this.showError('Failed to load activity logs');
+            this.showError('Failed to load activity logs: ' + error.message);
         } finally {
             this.hideLoading();
         }
     }
 
     async loadActivityStats() {
+        console.log('Loading activity stats...');
+        
         try {
             const response = await fetch('/api/admin/activity-stats', {
                 headers: {
@@ -1150,11 +1163,16 @@ class AdminDashboard {
                 }
             });
 
+            console.log('Activity stats response status:', response.status);
+
             if (!response.ok) {
+                const errorText = await response.text();
+                console.error('Activity stats API error:', response.status, errorText);
                 throw new Error(`HTTP error! status: ${response.status}`);
             }
 
             const stats = await response.json();
+            console.log('Activity stats data received:', stats);
             this.renderActivityStats(stats);
         } catch (error) {
             console.error('Error loading activity stats:', error);
@@ -1374,6 +1392,20 @@ class AdminDashboard {
         setTimeout(() => {
             document.getElementById('notification-close').focus();
         }, 100);
+    }
+
+    showLoading() {
+        const loadingOverlay = document.getElementById('loading-overlay');
+        if (loadingOverlay) {
+            loadingOverlay.classList.add('active');
+        }
+    }
+
+    hideLoading() {
+        const loadingOverlay = document.getElementById('loading-overlay');
+        if (loadingOverlay) {
+            loadingOverlay.classList.remove('active');
+        }
     }
 
     showSuccess(message) {
