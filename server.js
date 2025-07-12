@@ -377,23 +377,51 @@ app.get('/api/posts/id/:id', authenticateToken, async (req, res) => {
 
 app.post('/api/posts', authenticateToken, async (req, res) => {
     try {
+        console.log('POST /api/posts - Request body:', req.body);
         const { title, content, youtube_url, published = true } = req.body;
         
-        // Generate slug from title
-        const slug = title.toLowerCase()
+        // Validate required fields
+        if (!title || !content) {
+            console.log('Validation failed - missing title or content');
+            return res.status(400).json({ error: 'Title and content are required' });
+        }
+        
+        console.log('Generating slug for title:', title);
+        // Generate base slug from title
+        let baseSlug = title.toLowerCase()
             .replace(/[^a-z0-9 -]/g, '')
             .replace(/\s+/g, '-')
             .replace(/-+/g, '-')
             .trim('-');
+        
+        // Check for existing slugs and make unique if necessary
+        let slug = baseSlug;
+        let counter = 1;
+        let slugExists = true;
+        
+        while (slugExists) {
+            const existingPost = await client`SELECT id FROM posts WHERE slug = ${slug}`;
+            if (existingPost.length === 0) {
+                slugExists = false;
+            } else {
+                slug = `${baseSlug}-${counter}`;
+                counter++;
+            }
+        }
+        
+        console.log('Final unique slug:', slug);
+        console.log('Attempting database insert...');
 
         const result = await client`INSERT INTO posts (title, content, youtube_url, published, slug) 
                                    VALUES (${title}, ${content}, ${youtube_url}, ${published}, ${slug}) 
                                    RETURNING *`;
         
+        console.log('Database insert successful:', result[0]);
         res.status(201).json(result[0]);
     } catch (error) {
-        console.error('Create post error:', error);
-        res.status(500).json({ error: 'Internal server error' });
+        console.error('Create post error details:', error);
+        console.error('Error stack:', error.stack);
+        res.status(500).json({ error: 'Internal server error', details: error.message });
     }
 });
 
@@ -402,12 +430,27 @@ app.put('/api/posts/:id', authenticateToken, async (req, res) => {
         const { id } = req.params;
         const { title, content, youtube_url, published } = req.body;
         
-        // Generate slug from title
-        const slug = title.toLowerCase()
+        // Generate base slug from title
+        let baseSlug = title.toLowerCase()
             .replace(/[^a-z0-9 -]/g, '')
             .replace(/\s+/g, '-')
             .replace(/-+/g, '-')
             .trim('-');
+        
+        // Check for existing slugs (excluding current post) and make unique if necessary
+        let slug = baseSlug;
+        let counter = 1;
+        let slugExists = true;
+        
+        while (slugExists) {
+            const existingPost = await client`SELECT id FROM posts WHERE slug = ${slug} AND id != ${id}`;
+            if (existingPost.length === 0) {
+                slugExists = false;
+            } else {
+                slug = `${baseSlug}-${counter}`;
+                counter++;
+            }
+        }
 
         const result = await client`UPDATE posts 
                                    SET title = ${title}, content = ${content}, youtube_url = ${youtube_url}, 

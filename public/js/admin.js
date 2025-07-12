@@ -224,27 +224,32 @@ class AdminDashboard {
 
             // Load tab-specific data only if we have a valid token
             if (this.token && this.isTokenValid()) {
-                if (tabName === 'analytics') {
+                if (tabName == 'analytics') {
                     if (this.cachedAnalytics) {
                         console.log('Using cached analytics data', this.cachedAnalytics);
                         this.renderAnalytics(this.cachedAnalytics);
-                    } else {
+                    } 
+                    else {
                         console.log('Loading analytics for the first time - no cache found');
                         this.loadAnalytics();
                     }
-                } else if (tabName === 'posts') {
+                }
+                else if (tabName == 'posts') {
                     if (this.cachedPosts) {
                         console.log('Using cached posts data', this.cachedPosts);
                         this.renderPosts(this.cachedPosts);
-                    } else {
+                    } 
+                    else {
                         console.log('Loading posts for the first time - no cache found');
                         this.loadPosts();
                     }
-                } else if (tabName === 'comments') {
+                } 
+                else if (tabName == 'comments') {
                     if (this.cachedComments) {
                         console.log('Using cached comments data', this.cachedComments);
                         this.renderComments(this.cachedComments);
-                    } else {
+                    } 
+                    else {
                         console.log('Loading comments for the first time - no cache found');
                         this.showCommentsLoading();
                         this.loadComments();
@@ -252,7 +257,8 @@ class AdminDashboard {
                 } else {
                     console.log(`No data loading needed for ${tabName} tab`);
                 }
-            } else {
+            } 
+            else {
                 console.log('No token or invalid token, skipping data load');
             }
         } catch (error) {
@@ -868,16 +874,6 @@ class AdminDashboard {
         document.body.style.overflow = '';
     }
 
-    hideNotificationModal() {
-        document.getElementById('notification-modal-overlay').classList.remove('active');
-        document.body.style.overflow = '';
-    }
-
-    hideDeleteModal() {
-        document.getElementById('delete-modal-overlay').classList.remove('active');
-        document.body.style.overflow = '';
-    }
-
     formatDate(dateString) {
         const date = new Date(dateString);
         return date.toLocaleDateString('en-US', {
@@ -1099,6 +1095,51 @@ class AdminDashboard {
                 </td>
             </tr>
         `;
+    }
+
+    // Notification and error handling methods
+    showNotificationModal(message, type = 'info') {
+        const modal = document.getElementById('notification-modal-overlay');
+        const modalContent = modal.querySelector('.modal-content');
+        const title = document.getElementById('notification-title');
+        const messageElement = document.getElementById('notification-message');
+        
+        // Set the icon and title based on type
+        if (type === 'success') {
+            title.innerHTML = '<i class="fas fa-check-circle"></i> Success';
+            modalContent.className = 'modal-content notification-modal success';
+        } else if (type === 'error') {
+            title.innerHTML = '<i class="fas fa-exclamation-triangle"></i> Error';
+            modalContent.className = 'modal-content notification-modal error';
+        } else {
+            title.innerHTML = '<i class="fas fa-info-circle"></i> Notification';
+            modalContent.className = 'modal-content notification-modal';
+        }
+        
+        // Set the message
+        messageElement.textContent = message;
+        
+        // Show the modal
+        modal.classList.add('active');
+        document.body.style.overflow = 'hidden';
+        
+        // Focus the OK button for accessibility
+        setTimeout(() => {
+            document.getElementById('notification-close').focus();
+        }, 100);
+    }
+
+    showSuccess(message) {
+        this.showNotificationModal(message, 'success');
+    }
+
+    showError(message) {
+        this.showNotificationModal(message, 'error');
+    }
+
+    hideNotificationModal() {
+        document.getElementById('notification-modal-overlay').classList.remove('active');
+        document.body.style.overflow = '';
     }
 }
 
