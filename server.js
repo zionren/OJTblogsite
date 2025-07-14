@@ -794,6 +794,117 @@ app.get('/api/analytics/dashboard', authenticateToken, async (req, res) => {
     }
 });
 
+// Get analytics for a specific post
+app.get('/api/analytics/post/:id', authenticateToken, async (req, res) => {
+    try {
+        const postId = parseInt(req.params.id);
+        
+        if (isNaN(postId)) {
+            return res.status(400).json({ error: 'Invalid post ID' });
+        }
+
+        // Get post details
+        const post = await client`SELECT * FROM posts WHERE id = ${postId}`;
+        if (post.length === 0) {
+            return res.status(404).json({ error: 'Post not found' });
+        }
+
+        // Total views for this post
+        const totalViews = await client`
+            SELECT COUNT(*) as count 
+            FROM analytics 
+            WHERE post_id = ${postId} AND event_type = 'post_view'
+        `;
+
+        // Video plays if it has a YouTube URL
+        const videoPlays = await client`
+            SELECT COUNT(*) as count 
+            FROM analytics 
+            WHERE post_id = ${postId} AND event_type = 'video_play'
+        `;
+
+        // Daily views for the last 30 days
+        const dailyViews = await client`
+            WITH date_series AS (
+                SELECT generate_series(
+                    CURRENT_DATE - INTERVAL '29 days',
+                    CURRENT_DATE,
+                    '1 day'::interval
+                )::date as date
+            )
+            SELECT 
+                ds.date,
+                COALESCE(COUNT(a.id), 0) as views
+            FROM date_series ds
+            LEFT JOIN analytics a ON DATE(a.timestamp) = ds.date 
+                AND a.post_id = ${postId} 
+                AND a.event_type = 'post_view'
+            GROUP BY ds.date
+            ORDER BY ds.date ASC
+        `;
+
+        // Hourly distribution of views
+        const hourlyViews = await client`
+            SELECT 
+                EXTRACT(HOUR FROM timestamp) as hour,
+                COUNT(*) as views
+            FROM analytics 
+            WHERE post_id = ${postId} AND event_type = 'post_view'
+            GROUP BY EXTRACT(HOUR FROM timestamp)
+            ORDER BY hour
+        `;
+
+        // Comments count
+        const commentsCount = await client`
+            SELECT COUNT(*) as count 
+            FROM comments 
+            WHERE post_id = ${postId}
+        `;
+
+        // User agents (browsers) breakdown
+        const browserStats = await client`
+            SELECT 
+                CASE 
+                    WHEN user_agent ILIKE '%chrome%' THEN 'Chrome'
+                    WHEN user_agent ILIKE '%firefox%' THEN 'Firefox'
+                    WHEN user_agent ILIKE '%safari%' THEN 'Safari'
+                    WHEN user_agent ILIKE '%edge%' THEN 'Edge'
+                    ELSE 'Other'
+                END as browser,
+                COUNT(*) as count
+            FROM analytics 
+            WHERE post_id = ${postId} AND event_type = 'post_view' AND user_agent IS NOT NULL
+            GROUP BY browser
+            ORDER BY count DESC
+        `;
+
+        // Recent activity (last 10 events)
+        const recentActivity = await client`
+            SELECT event_type, timestamp, user_agent, ip_address
+            FROM analytics 
+            WHERE post_id = ${postId}
+            ORDER BY timestamp DESC
+            LIMIT 10
+        `;
+
+        const response = {
+            post: post[0],
+            totalViews: parseInt(totalViews[0].count),
+            videoPlays: parseInt(videoPlays[0].count),
+            commentsCount: parseInt(commentsCount[0].count),
+            dailyViews,
+            hourlyViews,
+            browserStats,
+            recentActivity
+        };
+
+        res.json(response);
+    } catch (error) {
+        console.error('Post analytics error:', error);
+        res.status(500).json({ error: 'Internal server error', details: error.message });
+    }
+});
+
 // Track analytics events
 app.post('/api/analytics/track', async (req, res) => {
     try {

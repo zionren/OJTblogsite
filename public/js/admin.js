@@ -97,6 +97,9 @@ class AdminDashboard {
             if (e.key === 'Escape' && document.getElementById('delete-modal-overlay').classList.contains('active')) {
                 this.hideDeleteModal();
             }
+            if (e.key === 'Escape' && document.getElementById('post-stats-modal').classList.contains('active')) {
+                this.hidePostStatsModal();
+            }
         });
 
         // Delete modal events
@@ -172,8 +175,31 @@ class AdminDashboard {
             }
         });
 
+        // Post stats modal event listeners
+        document.getElementById('post-stats-close')?.addEventListener('click', () => {
+            this.hidePostStatsModal();
+        });
+
+        document.getElementById('post-stats-modal')?.addEventListener('click', (e) => {
+            if (e.target.id === 'post-stats-modal') {
+                this.hidePostStatsModal();
+            }
+        });
+
         // Activity logs event listeners
         this.setupActivityLogsEventListeners();
+
+        // Post statistics modal events
+        document.getElementById('post-stats-close').addEventListener('click', () => {
+            this.hidePostStatsModal();
+        });
+
+        // Close post stats modal when clicking outside
+        document.getElementById('post-stats-modal').addEventListener('click', (e) => {
+            if (e.target.id === 'post-stats-modal') {
+                this.hidePostStatsModal();
+            }
+        });
 
         // Window resize handler for charts responsiveness
         let resizeTimeout;
@@ -497,6 +523,11 @@ class AdminDashboard {
             }
         }
 
+        // Check if dark mode is active
+        const isDarkMode = document.documentElement.getAttribute('data-theme') === 'dark';
+        const textColor = isDarkMode ? '#ecf0f1' : '#2c3e50';
+        const gridColor = isDarkMode ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)';
+
         this.charts.dailyVisits = new Chart(ctx, {
             type: 'line',
             data: {
@@ -547,7 +578,7 @@ class AdminDashboard {
                             }
                         },
                         grid: {
-                            color: getComputedStyle(document.documentElement).getPropertyValue('--border-color')
+                            color: gridColor
                         }
                     },
                     x: {
@@ -560,7 +591,7 @@ class AdminDashboard {
                             }
                         },
                         grid: {
-                            color: getComputedStyle(document.documentElement).getPropertyValue('--border-color')
+                            color: gridColor
                         }
                     }
                 }
@@ -646,6 +677,9 @@ class AdminDashboard {
                 </td>
                 <td>${this.formatDate(post.created_at)}</td>
                 <td class="post-actions">
+                    <button class="info-btn" onclick="adminDashboard.showPostStats(${post.id}, '${this.escapeHtml(post.title)}')">
+                        <i class="fas fa-chart-line"></i> Stats
+                    </button>
                     <button class="edit-btn" onclick="adminDashboard.editPost(${post.id})">
                         <i class="fas fa-edit"></i> Edit
                     </button>
@@ -1414,6 +1448,323 @@ class AdminDashboard {
 
     showError(message) {
         this.showNotificationModal(message, 'error');
+    }
+
+    // Post Statistics Methods
+    async showPostStats(postId, postTitle) {
+        const modal = document.getElementById('post-stats-modal');
+        const loading = document.getElementById('stats-loading');
+        const container = document.getElementById('post-stats-container');
+        const titleElement = document.getElementById('post-stats-title');
+        
+        // Show modal and loading
+        modal.classList.add('active');
+        document.body.style.overflow = 'hidden';
+        loading.style.display = 'block';
+        container.style.display = 'none';
+        titleElement.textContent = `Statistics: ${postTitle}`;
+        
+        try {
+            const response = await fetch(`/api/analytics/post/${postId}`, {
+                headers: {
+                    'Authorization': `Bearer ${this.token}`
+                }
+            });
+
+            if (!response.ok) {
+                throw new Error('Failed to fetch post statistics');
+            }
+
+            const data = await response.json();
+            this.renderPostStats(data);
+            
+            loading.style.display = 'none';
+            container.style.display = 'block';
+            
+        } catch (error) {
+            console.error('Error loading post statistics:', error);
+            this.showError('Failed to load post statistics');
+            this.hidePostStatsModal();
+        }
+    }
+
+    renderPostStats(data) {
+        // Update overview stats
+        document.getElementById('total-views').textContent = data.totalViews;
+        document.getElementById('video-plays').textContent = data.videoPlays;
+        document.getElementById('comments-count').textContent = data.commentsCount;
+        
+        // Calculate post age
+        const postAge = Math.floor((new Date() - new Date(data.post.created_at)) / (1000 * 60 * 60 * 24));
+        document.getElementById('post-age').textContent = postAge;
+
+        // Render charts
+        this.renderDailyViewsChart(data.dailyViews);
+        this.renderHourlyViewsChart(data.hourlyViews);
+        this.renderBrowserStatsChart(data.browserStats);
+        
+        // Render recent activity
+        this.renderRecentActivity(data.recentActivity);
+    }
+
+    renderDailyViewsChart(dailyViews) {
+        const ctx = document.getElementById('daily-views-chart').getContext('2d');
+        
+        // Destroy existing chart if it exists
+        if (this.dailyViewsChart) {
+            this.dailyViewsChart.destroy();
+        }
+
+        const labels = dailyViews.map(item => new Date(item.date).toLocaleDateString());
+        const views = dailyViews.map(item => parseInt(item.views));
+
+        // Check if dark mode is active
+        const isDarkMode = document.documentElement.getAttribute('data-theme') === 'dark';
+        const textColor = isDarkMode ? '#ecf0f1' : '#2c3e50';
+        const gridColor = isDarkMode ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)';
+
+        this.dailyViewsChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: 'Views',
+                    data: views,
+                    borderColor: '#3498db',
+                    backgroundColor: 'rgba(52, 152, 219, 0.1)',
+                    borderWidth: 2,
+                    fill: true,
+                    tension: 0.4
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: false
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        grid: {
+                            color: gridColor
+                        },
+                        ticks: {
+                            color: textColor
+                        }
+                    },
+                    x: {
+                        grid: {
+                            color: gridColor
+                        },
+                        ticks: {
+                            color: textColor
+                        }
+                    }
+                }
+            }
+        });
+    }
+
+    renderHourlyViewsChart(hourlyViews) {
+        const ctx = document.getElementById('hourly-views-chart').getContext('2d');
+        
+        // Destroy existing chart if it exists
+        if (this.hourlyViewsChart) {
+            this.hourlyViewsChart.destroy();
+        }
+
+        // Create 24-hour data array with zeros for missing hours
+        const hourData = new Array(24).fill(0);
+        hourlyViews.forEach(item => {
+            hourData[parseInt(item.hour)] = parseInt(item.views);
+        });
+
+        const labels = Array.from({length: 24}, (_, i) => `${i}:00`);
+
+        // Check if dark mode is active
+        const isDarkMode = document.documentElement.getAttribute('data-theme') === 'dark';
+        const textColor = isDarkMode ? '#ecf0f1' : '#2c3e50';
+        const gridColor = isDarkMode ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)';
+
+        this.hourlyViewsChart = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: 'Views',
+                    data: hourData,
+                    backgroundColor: 'rgba(46, 204, 113, 0.7)',
+                    borderColor: '#2ecc71',
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: false
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        grid: {
+                            color: gridColor
+                        },
+                        ticks: {
+                            color: textColor
+                        }
+                    },
+                    x: {
+                        grid: {
+                            color: gridColor
+                        },
+                        ticks: {
+                            color: textColor
+                        }
+                    }
+                }
+            }
+        });
+    }
+
+    renderBrowserStatsChart(browserStats) {
+        const ctx = document.getElementById('browser-stats-chart').getContext('2d');
+        
+        // Destroy existing chart if it exists
+        if (this.browserStatsChart) {
+            this.browserStatsChart.destroy();
+        }
+
+        if (browserStats.length === 0) {
+            // Check if dark mode is active for no data message
+            const isDarkMode = document.documentElement.getAttribute('data-theme') === 'dark';
+            const textColor = isDarkMode ? '#ecf0f1' : '#666';
+            
+            ctx.font = '16px Arial';
+            ctx.fillStyle = textColor;
+            ctx.textAlign = 'center';
+            ctx.fillText('No browser data available', ctx.canvas.width / 2, ctx.canvas.height / 2);
+            return;
+        }
+
+        const labels = browserStats.map(item => item.browser);
+        const data = browserStats.map(item => parseInt(item.count));
+        const colors = ['#e74c3c', '#3498db', '#f39c12', '#2ecc71', '#9b59b6'];
+
+        // Check if dark mode is active
+        const isDarkMode = document.documentElement.getAttribute('data-theme') === 'dark';
+        const textColor = isDarkMode ? '#ecf0f1' : '#2c3e50';
+
+        this.browserStatsChart = new Chart(ctx, {
+            type: 'doughnut',
+            data: {
+                labels: labels,
+                datasets: [{
+                    data: data,
+                    backgroundColor: colors.slice(0, labels.length),
+                    borderColor: isDarkMode ? '#2c3e50' : '#fff',
+                    borderWidth: 2
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: {
+                            padding: 20,
+                            usePointStyle: true,
+                            color: textColor
+                        }
+                    }
+                }
+            }
+        });
+    }
+
+    renderRecentActivity(recentActivity) {
+        const container = document.getElementById('recent-activity');
+        
+        if (recentActivity.length === 0) {
+            container.innerHTML = '<p style="text-align: center; color: #666; padding: 1rem;">No recent activity</p>';
+            return;
+        }
+
+        container.innerHTML = recentActivity.map(activity => {
+            const date = new Date(activity.timestamp);
+            const timeAgo = this.getTimeAgo(date);
+            const icon = activity.event_type === 'post_view' ? 'eye' : 'play';
+            const actionText = activity.event_type === 'post_view' ? 'Viewed' : 'Video played';
+            
+            return `
+                <div class="activity-item">
+                    <div class="activity-icon">
+                        <i class="fas fa-${icon}"></i>
+                    </div>
+                    <div class="activity-details">
+                        <div class="activity-type">${actionText}</div>
+                        <div class="activity-time">${timeAgo}</div>
+                        <div class="activity-meta">
+                            ${this.getBrowserName(activity.user_agent)} • ${this.maskIP(activity.ip_address)}
+                        </div>
+                    </div>
+                </div>
+            `;
+        }).join('');
+    }
+
+    getBrowserName(userAgent) {
+        if (!userAgent) return 'Unknown';
+        if (userAgent.includes('Chrome')) return 'Chrome';
+        if (userAgent.includes('Firefox')) return 'Firefox';
+        if (userAgent.includes('Safari')) return 'Safari';
+        if (userAgent.includes('Edge')) return 'Edge';
+        return 'Other';
+    }
+
+    maskIP(ip) {
+        if (!ip) return 'Unknown';
+        const parts = ip.split('.');
+        if (parts.length === 4) {
+            return `${parts[0]}.${parts[1]}.xxx.xxx`;
+        }
+        return 'Unknown';
+    }
+
+    getTimeAgo(date) {
+        const now = new Date();
+        const diffInSeconds = Math.floor((now - date) / 1000);
+        
+        if (diffInSeconds < 60) return 'Just now';
+        if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)}m ago`;
+        if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)}h ago`;
+        return `${Math.floor(diffInSeconds / 86400)}d ago`;
+    }
+
+    hidePostStatsModal() {
+        const modal = document.getElementById('post-stats-modal');
+        modal.classList.remove('active');
+        document.body.style.overflow = '';
+        
+        // Destroy charts to prevent memory leaks
+        if (this.dailyViewsChart) {
+            this.dailyViewsChart.destroy();
+            this.dailyViewsChart = null;
+        }
+        if (this.hourlyViewsChart) {
+            this.hourlyViewsChart.destroy();
+            this.hourlyViewsChart = null;
+        }
+        if (this.browserStatsChart) {
+            this.browserStatsChart.destroy();
+            this.browserStatsChart = null;
+        }
     }
 
     hideNotificationModal() {

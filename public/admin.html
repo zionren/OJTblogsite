@@ -462,6 +462,90 @@
         </div>
     </div>
 
+    <!-- Post Statistics Modal -->
+    <div class="modal-overlay" id="post-stats-modal">
+        <div class="modal-content post-stats-modal-content">
+            <div class="modal-header">
+                <h3 id="post-stats-title">Post Statistics</h3>
+                <button class="modal-close" id="post-stats-close">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="stats-loading" id="stats-loading">
+                    <i class="fas fa-spinner fa-spin"></i>
+                    <p>Loading statistics...</p>
+                </div>
+                
+                <div class="post-stats-container" id="post-stats-container" style="display: none;">
+                    <!-- Overview Stats -->
+                    <div class="stats-overview">
+                        <div class="stat-card">
+                            <div class="stat-icon">
+                                <i class="fas fa-eye"></i>
+                            </div>
+                            <div class="stat-info">
+                                <h4 id="total-views">0</h4>
+                                <p>Total Views</p>
+                            </div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-icon">
+                                <i class="fas fa-play"></i>
+                            </div>
+                            <div class="stat-info">
+                                <h4 id="video-plays">0</h4>
+                                <p>Video Plays</p>
+                            </div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-icon">
+                                <i class="fas fa-comments"></i>
+                            </div>
+                            <div class="stat-info">
+                                <h4 id="comments-count">0</h4>
+                                <p>Comments</p>
+                            </div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-icon">
+                                <i class="fas fa-calendar"></i>
+                            </div>
+                            <div class="stat-info">
+                                <h4 id="post-age">0</h4>
+                                <p>Days Old</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Charts Section -->
+                    <div class="stats-charts">
+                        <div class="chart-container">
+                            <h4>Daily Views (Last 30 Days)</h4>
+                            <canvas id="daily-views-chart"></canvas>
+                        </div>
+                        
+                        <div class="chart-container">
+                            <h4>Hourly View Distribution</h4>
+                            <canvas id="hourly-views-chart"></canvas>
+                        </div>
+                        
+                        <div class="chart-container">
+                            <h4>Browser Statistics</h4>
+                            <canvas id="browser-stats-chart"></canvas>
+                        </div>
+                    </div>
+
+                    <!-- Recent Activity -->
+                    <div class="stats-activity">
+                        <h4>Recent Activity</h4>
+                        <div class="activity-list" id="recent-activity">
+                            <!-- Recent activity will be loaded here -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script src="/js/theme.js"></script>
     <script src="/js/sidebar.js"></script>
     <script src="/js/auth.js"></script>
