@@ -762,6 +762,9 @@
     padding: 1.5rem 3rem 1rem 1.5rem;
     border-bottom: 1px solid var(--border-color);
     position: relative;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
 }
 
 .modal-header h3 {
@@ -775,6 +778,55 @@
 
 .modal-header h3 i {
     color: #65d1f5;
+}
+
+.modal-header-actions {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    position: absolute;
+    right: 55px;
+    top: 50%;
+    transform: translateY(-50%);
+}
+
+.export-pdf-btn {
+    background: linear-gradient(135deg, #e74c3c, #c0392b);
+    color: white;
+    border: none;
+    padding: 0.35rem 0.7rem;
+    border-radius: 5px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    box-shadow: 0 2px 4px rgba(231, 76, 60, 0.3);
+    white-space: nowrap;
+}
+
+.export-pdf-btn:hover {
+    background: linear-gradient(135deg, #c0392b, #a93226);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(231, 76, 60, 0.4);
+}
+
+.export-pdf-btn:active {
+    transform: translateY(0);
+}
+
+.export-pdf-btn i {
+    font-size: 0.9rem;
+}
+
+.export-pdf-btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none;
 }
 
 .modal-body {
@@ -2416,25 +2468,32 @@
 /* Modal close button styles */
 .modal-close {
     position: absolute;
-    top: 1rem;
-    right: 1rem;
-    background: none;
+    top: 15px;
+    right: 15px;
+    background-color: #e74c3c;
+    color: white;
     border: none;
-    font-size: 1.5rem;
-    color: var(--text-secondary);
-    cursor: pointer;
-    width: 30px;
-    height: 30px;
+    border-radius: 50%;
+    width: 32px;
+    height: 32px;
     display: flex;
     align-items: center;
     justify-content: center;
-    border-radius: 50%;
+    cursor: pointer;
+    font-size: 18px;
+    font-weight: bold;
     transition: all 0.2s ease;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+    z-index: 1000;
 }
 
 .modal-close:hover {
-    background: var(--hover-bg);
-    color: var(--text-primary);
+    background-color: #c0392b;
+    transform: scale(1.05);
+}
+
+.modal-close:active {
+    transform: scale(0.95);
 }
 
 /* Responsive design for stats modal */
@@ -2462,5 +2521,30 @@
     
     .chart-container {
         padding: 1rem;
+    }
+    
+    .modal-header {
+        padding: 1rem;
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 1rem;
+        position: relative;
+    }
+    
+    .modal-header-actions {
+        position: static;
+        transform: none;
+        width: 100%;
+        justify-content: flex-end;
+    }
+    
+    .modal-close {
+        top: 10px;
+        right: 10px;
+    }
+    
+    .export-pdf-btn {
+        font-size: 0.75rem;
+        padding: 0.35rem 0.7rem;
     }
 }

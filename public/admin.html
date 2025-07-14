@@ -467,6 +467,12 @@
         <div class="modal-content post-stats-modal-content">
             <div class="modal-header">
                 <h3 id="post-stats-title">Post Statistics</h3>
+                <div class="modal-header-actions">
+                    <button class="export-pdf-btn" id="export-post-pdf" title="Export to PDF">
+                        <i class="fas fa-file-pdf"></i>
+                        Export PDF
+                    </button>
+                </div>
                 <button class="modal-close" id="post-stats-close">&times;</button>
             </div>
             <div class="modal-body">
@@ -549,6 +555,8 @@
     <script src="/js/theme.js"></script>
     <script src="/js/sidebar.js"></script>
     <script src="/js/auth.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <script src="/js/admin.js"></script>
 </body>
 </html>

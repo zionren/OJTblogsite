@@ -12,6 +12,10 @@ class AdminDashboard {
         this.cachedComments = null;
         this.deletingCommentId = null;
         
+        // Current post stats for PDF export
+        this.currentPostStats = null;
+        this.currentPostTitle = null;
+        
         // Activity logs pagination
         this.currentLogsPage = 1;
         this.totalLogsPages = 1;
@@ -199,6 +203,11 @@ class AdminDashboard {
             if (e.target.id === 'post-stats-modal') {
                 this.hidePostStatsModal();
             }
+        });
+
+        // Export PDF button event listener
+        document.getElementById('export-post-pdf')?.addEventListener('click', () => {
+            this.exportPostStatsToPDF();
         });
 
         // Window resize handler for charts responsiveness
@@ -1476,6 +1485,11 @@ class AdminDashboard {
             }
 
             const data = await response.json();
+            
+            // Store current post stats for PDF export
+            this.currentPostStats = data;
+            this.currentPostTitle = postTitle;
+            
             this.renderPostStats(data);
             
             loading.style.display = 'none';
@@ -1770,6 +1784,191 @@ class AdminDashboard {
     hideNotificationModal() {
         document.getElementById('notification-modal-overlay').classList.remove('active');
         document.body.style.overflow = '';
+    }
+
+    // PDF Export Methods
+    async exportPostStatsToPDF() {
+        if (!this.currentPostStats || !this.currentPostTitle) {
+            this.showError('No post statistics data available for export');
+            return;
+        }
+
+        const exportBtn = document.getElementById('export-post-pdf');
+        exportBtn.disabled = true;
+        exportBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Generating...';
+
+        try {
+            const { jsPDF } = window.jspdf;
+            const pdf = new jsPDF();
+            
+            // Set up PDF document
+            pdf.setFontSize(20);
+            pdf.setTextColor(44, 62, 80);
+            pdf.text('Post Statistics Report', 20, 30);
+            
+            // Post title
+            pdf.setFontSize(16);
+            pdf.setTextColor(52, 152, 219);
+            pdf.text(`Post: ${this.currentPostTitle}`, 20, 50);
+            
+            // Post details
+            pdf.setFontSize(12);
+            pdf.setTextColor(44, 62, 80);
+            const post = this.currentPostStats.post;
+            
+            // Post content summary
+            let yPosition = 70;
+            pdf.text('Post Content:', 20, yPosition);
+            yPosition += 10;
+            
+            // Clean and truncate post content
+            const contentLines = this.wrapText(pdf, this.stripHtml(post.content), 170, 20);
+            const maxContentLines = 15; // Limit content to prevent overflow
+            const displayLines = contentLines.slice(0, maxContentLines);
+            
+            displayLines.forEach(line => {
+                pdf.text(line, 20, yPosition);
+                yPosition += 7;
+            });
+            
+            if (contentLines.length > maxContentLines) {
+                pdf.text('... (content truncated)', 20, yPosition);
+                yPosition += 7;
+            }
+            
+            yPosition += 10;
+            
+            // YouTube video link
+            if (post.video_url) {
+                pdf.setTextColor(231, 76, 60);
+                pdf.text('YouTube Video Link:', 20, yPosition);
+                yPosition += 10;
+                pdf.setTextColor(52, 152, 219);
+                pdf.text(post.video_url, 20, yPosition);
+                yPosition += 15;
+            }
+            
+            // Statistics overview
+            pdf.setFontSize(14);
+            pdf.setTextColor(44, 62, 80);
+            pdf.text('Statistics Overview:', 20, yPosition);
+            yPosition += 15;
+            
+            pdf.setFontSize(11);
+            const stats = [
+                `Total Views: ${this.currentPostStats.totalViews}`,
+                `Video Plays: ${this.currentPostStats.videoPlays}`,
+                `Comments: ${this.currentPostStats.commentsCount}`,
+                `Post Age: ${Math.floor((new Date() - new Date(post.created_at)) / (1000 * 60 * 60 * 24))} days`,
+                `Created: ${new Date(post.created_at).toLocaleDateString()}`,
+                `Last Updated: ${new Date(post.updated_at).toLocaleDateString()}`
+            ];
+            
+            stats.forEach(stat => {
+                pdf.text(`• ${stat}`, 25, yPosition);
+                yPosition += 8;
+            });
+            
+            yPosition += 10;
+            
+            // Recent activity
+            if (this.currentPostStats.recentActivity && this.currentPostStats.recentActivity.length > 0) {
+                pdf.setFontSize(14);
+                pdf.setTextColor(44, 62, 80);
+                pdf.text('Recent Activity:', 20, yPosition);
+                yPosition += 15;
+                
+                pdf.setFontSize(10);
+                const maxActivities = 10;
+                const activities = this.currentPostStats.recentActivity.slice(0, maxActivities);
+                
+                activities.forEach(activity => {
+                    const activityText = `• ${activity.type} - ${new Date(activity.timestamp).toLocaleString()}`;
+                    if (activity.metadata) {
+                        const metadata = typeof activity.metadata === 'string' ? activity.metadata : JSON.stringify(activity.metadata);
+                        pdf.text(activityText, 25, yPosition);
+                        yPosition += 6;
+                        pdf.setTextColor(128, 128, 128);
+                        pdf.text(`  ${metadata.substring(0, 80)}`, 25, yPosition);
+                        pdf.setTextColor(44, 62, 80);
+                        yPosition += 8;
+                    } else {
+                        pdf.text(activityText, 25, yPosition);
+                        yPosition += 8;
+                    }
+                    
+                    // Start new page if needed
+                    if (yPosition > 260) {
+                        pdf.addPage();
+                        yPosition = 30;
+                    }
+                });
+            }
+            
+            // Footer
+            const pageCount = pdf.internal.getNumberOfPages();
+            for (let i = 1; i <= pageCount; i++) {
+                pdf.setPage(i);
+                pdf.setFontSize(8);
+                pdf.setTextColor(128, 128, 128);
+                pdf.text(`Generated on ${new Date().toLocaleString()}`, 20, 285);
+                pdf.text(`Page ${i} of ${pageCount}`, 170, 285);
+            }
+            
+            // Save the PDF
+            const fileName = `post-stats-${this.slugify(this.currentPostTitle)}-${new Date().toISOString().split('T')[0]}.pdf`;
+            pdf.save(fileName);
+            
+            this.showSuccess('PDF report generated successfully!');
+            
+        } catch (error) {
+            console.error('Error generating PDF:', error);
+            this.showError('Failed to generate PDF report');
+        } finally {
+            exportBtn.disabled = false;
+            exportBtn.innerHTML = '<i class="fas fa-file-pdf"></i> Export PDF';
+        }
+    }
+    
+    // Helper method to strip HTML tags
+    stripHtml(html) {
+        const tmp = document.createElement('div');
+        tmp.innerHTML = html;
+        return tmp.textContent || tmp.innerText || '';
+    }
+    
+    // Helper method to wrap text for PDF
+    wrapText(pdf, text, maxWidth, x) {
+        const words = text.split(' ');
+        const lines = [];
+        let currentLine = '';
+        
+        words.forEach(word => {
+            const testLine = currentLine + (currentLine ? ' ' : '') + word;
+            const testWidth = pdf.getTextWidth(testLine);
+            
+            if (testWidth > maxWidth && currentLine) {
+                lines.push(currentLine);
+                currentLine = word;
+            } else {
+                currentLine = testLine;
+            }
+        });
+        
+        if (currentLine) {
+            lines.push(currentLine);
+        }
+        
+        return lines;
+    }
+    
+    // Helper method to create URL-friendly slugs
+    slugify(text) {
+        return text
+            .toLowerCase()
+            .replace(/[^\w\s-]/g, '')
+            .replace(/[\s_-]+/g, '-')
+            .replace(/^-+|-+$/g, '');
     }
 }
 
