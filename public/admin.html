@@ -225,38 +225,111 @@
                     <div class="dashboard-content">
                         <div class="content-header">
                             <h2><i class="fas fa-comments"></i> Comment Moderation</h2>
-                            <button class="btn-secondary" id="refresh-comments">
-                                <i class="fas fa-sync-alt"></i> Refresh
-                            </button>
+                            <div class="content-header-actions">
+                                <button class="btn-secondary" id="refresh-comments">
+                                    <i class="fas fa-sync-alt"></i> Refresh
+                                </button>
+                                <button class="btn-secondary" id="export-comments">
+                                    <i class="fas fa-download"></i> Export
+                                </button>
+                            </div>
                         </div>
 
-                        <div class="comments-section">
-                            <div class="comments-filters">
+                        <!-- Comment Stats Cards -->
+                        <div class="activity-stats-grid">
+                            <div class="stat-card">
+                                <div class="stat-icon">
+                                    <i class="fas fa-comments"></i>
+                                </div>
+                                <div class="stat-info">
+                                    <h3 id="total-comments-count">0</h3>
+                                    <p>Total Comments</p>
+                                </div>
+                            </div>
+                            <div class="stat-card">
+                                <div class="stat-icon">
+                                    <i class="fas fa-calendar-day"></i>
+                                </div>
+                                <div class="stat-info">
+                                    <h3 id="today-comments-count">0</h3>
+                                    <p>Today's Comments</p>
+                                </div>
+                            </div>
+                            <div class="stat-card">
+                                <div class="stat-icon">
+                                    <i class="fas fa-clock"></i>
+                                </div>
+                                <div class="stat-info">
+                                    <h3 id="recent-comments-count">0</h3>
+                                    <p>Last 7 Days</p>
+                                </div>
+                            </div>
+                            <div class="stat-card">
+                                <div class="stat-icon">
+                                    <i class="fas fa-user-friends"></i>
+                                </div>
+                                <div class="stat-info">
+                                    <h3 id="unique-commenters-count">0</h3>
+                                    <p>Unique Authors</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Comment Filters -->
+                        <div class="logs-filters">
+                            <div class="filter-group">
+                                <label for="comment-post-filter">Post:</label>
                                 <select id="comment-post-filter" class="form-control">
                                     <option value="">All Posts</option>
                                 </select>
-                                <button class="btn-primary btn-small" id="apply-comment-filters">
-                                    <i class="fas fa-filter"></i> Filter
-                                </button>
                             </div>
+                            <div class="filter-group">
+                                <label for="comment-author-filter">Author:</label>
+                                <input type="text" id="comment-author-filter" class="form-control" placeholder="Filter by author name...">
+                            </div>
+                            <div class="filter-group">
+                                <label for="comment-date-filter">Date Range:</label>
+                                <select id="comment-date-filter" class="form-control">
+                                    <option value="">All Time</option>
+                                    <option value="today">Today</option>
+                                    <option value="week">Last 7 Days</option>
+                                    <option value="month">Last 30 Days</option>
+                                </select>
+                            </div>
+                            <button class="btn-primary btn-small" id="apply-comment-filters">
+                                <i class="fas fa-filter"></i> Apply Filters
+                            </button>
+                            <button class="btn-secondary btn-small" id="clear-comment-filters">
+                                <i class="fas fa-times"></i> Clear
+                            </button>
+                        </div>
 
-                            <div class="comments-container">
-                                <div class="comments-table-container">
-                                    <table class="comments-table">
-                                        <thead>
-                                            <tr>
-                                                <th width="15%">Author</th>
-                                                <th width="30%">Comment</th>
-                                                <th width="25%">Post</th>
-                                                <th width="15%">Date</th>
-                                                <th width="15%">Actions</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody id="comments-table-body">
-                                            <!-- Comments will be loaded here -->
-                                        </tbody>
-                                    </table>
-                                </div>
+                        <!-- Comments Table -->
+                        <div class="logs-container">
+                            <div class="logs-table-container">
+                                <table class="logs-table">
+                                    <thead>
+                                        <tr>
+                                            <th width="15%">Author</th>
+                                            <th width="30%">Comment</th>
+                                            <th width="25%">Post</th>
+                                            <th width="15%">Date</th>
+                                            <th width="15%">Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="comments-table-body">
+                                        <!-- Comments will be loaded here -->
+                                    </tbody>
+                                </table>
+                            </div>
+                            <div class="logs-pagination">
+                                <button class="btn-secondary" id="comments-prev-page" disabled>
+                                    <i class="fas fa-chevron-left"></i> Previous
+                                </button>
+                                <span id="comments-pagination-info">Page 1 of 1</span>
+                                <button class="btn-secondary" id="comments-next-page" disabled>
+                                    Next <i class="fas fa-chevron-right"></i>
+                                </button>
                             </div>
                         </div>
                     </div>

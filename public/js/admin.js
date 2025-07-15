@@ -165,6 +165,15 @@ class AdminDashboard {
             this.applyCommentFilters();
         });
 
+        document.getElementById('clear-comment-filters')?.addEventListener('click', () => {
+            this.clearCommentFilters();
+            this.refreshComments();
+        });
+
+        document.getElementById('export-comments')?.addEventListener('click', () => {
+            this.exportComments();
+        });
+
         document.getElementById('comment-delete-cancel')?.addEventListener('click', () => {
             this.hideCommentDeleteModal();
         });
@@ -291,6 +300,7 @@ class AdminDashboard {
                     if (this.cachedComments) {
                         console.log('Using cached comments data', this.cachedComments);
                         this.renderComments(this.cachedComments);
+                        this.renderCommentStats(this.cachedComments);
                     } 
                     else {
                         console.log('Loading comments for the first time - no cache found');
@@ -947,10 +957,16 @@ class AdminDashboard {
         }
 
         try {
-            const postFilter = document.getElementById('comment-post-filter')?.value || '';
+            const filters = this.getCommentFilters();
             let url = '/api/admin/comments';
-            if (postFilter) {
-                url += `?postId=${postFilter}`;
+            
+            const queryParams = new URLSearchParams();
+            if (filters.postId) queryParams.append('postId', filters.postId);
+            if (filters.author) queryParams.append('author', filters.author);
+            if (filters.dateRange) queryParams.append('dateRange', filters.dateRange);
+            
+            if (queryParams.toString()) {
+                url += `?${queryParams.toString()}`;
             }
 
             const response = await fetch(url, {
@@ -968,12 +984,62 @@ class AdminDashboard {
             
             this.cachedComments = comments;
             this.renderComments(comments);
+            this.renderCommentStats(comments);
             await this.loadPostsForFilter();
 
         } catch (error) {
             console.error('Error loading comments:', error);
             this.showError('Failed to load comments');
         }
+    }
+
+    getCommentFilters() {
+        const postFilter = document.getElementById('comment-post-filter')?.value || '';
+        const authorFilter = document.getElementById('comment-author-filter')?.value || '';
+        const dateFilter = document.getElementById('comment-date-filter')?.value || '';
+        
+        const filters = {};
+        if (postFilter) filters.postId = postFilter;
+        if (authorFilter) filters.author = authorFilter;
+        if (dateFilter) filters.dateRange = dateFilter;
+        
+        return filters;
+    }
+
+    clearCommentFilters() {
+        document.getElementById('comment-post-filter').value = '';
+        document.getElementById('comment-author-filter').value = '';
+        document.getElementById('comment-date-filter').value = '';
+    }
+
+    renderCommentStats(comments) {
+        // Calculate stats
+        const totalComments = comments.length;
+        
+        // Today's comments
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        const todayComments = comments.filter(comment => {
+            const commentDate = new Date(comment.created_at);
+            commentDate.setHours(0, 0, 0, 0);
+            return commentDate.getTime() === today.getTime();
+        }).length;
+        
+        // Last 7 days comments
+        const sevenDaysAgo = new Date();
+        sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+        const recentComments = comments.filter(comment => {
+            return new Date(comment.created_at) >= sevenDaysAgo;
+        }).length;
+        
+        // Unique commenters
+        const uniqueAuthors = new Set(comments.map(comment => comment.author_name.toLowerCase())).size;
+        
+        // Update stat cards
+        document.getElementById('total-comments-count').textContent = totalComments;
+        document.getElementById('today-comments-count').textContent = todayComments;
+        document.getElementById('recent-comments-count').textContent = recentComments;
+        document.getElementById('unique-commenters-count').textContent = uniqueAuthors;
     }
 
     async loadPostsForFilter() {
@@ -1005,49 +1071,47 @@ class AdminDashboard {
 
     renderComments(comments) {
         const tbody = document.getElementById('comments-table-body');
-        const tableContainer = document.querySelector('.comments-table-container');
-        const commentsContainer = document.querySelector('.comments-container');
+        const tableContainer = document.querySelector('.logs-table-container');
+        const logsContainer = document.querySelector('.logs-container');
         
-        if (!tbody || !tableContainer || !commentsContainer) return;
+        if (!tbody || !tableContainer || !logsContainer) return;
 
         // Remove any existing empty state
-        const existingEmptyState = commentsContainer.querySelector('.comments-empty-state');
+        const existingEmptyState = logsContainer.querySelector('.logs-empty-state');
         if (existingEmptyState) {
             existingEmptyState.remove();
         }
 
         if (comments.length === 0) {
-            // Hide the table and show empty state
-            tableContainer.style.display = 'none';
-            
-            const emptyState = document.createElement('div');
-            emptyState.className = 'comments-empty-state';
-            emptyState.innerHTML = `
-                <i class="fas fa-comments"></i>
-                <h3>No Comments Yet</h3>
-                <p>When users post comments, they'll appear here for moderation.</p>
+            // Show empty state in table
+            tbody.innerHTML = `
+                <tr>
+                    <td colspan="5" class="logs-empty-state">
+                        <i class="fas fa-comments"></i>
+                        <h3>No Comments Found</h3>
+                        <p>No comments match your current filters.</p>
+                    </td>
+                </tr>
             `;
-            commentsContainer.appendChild(emptyState);
             return;
         }
-
-        // Show table and hide empty state
-        tableContainer.style.display = 'block';
 
         tbody.innerHTML = comments.map(comment => `
             <tr>
                 <td>${this.escapeHtml(comment.author_name)}</td>
-                <td class="comment-content">
-                    <div class="comment-text">${this.escapeHtml(comment.content.substring(0, 100))}${comment.content.length > 100 ? '...' : ''}</div>
+                <td class="log-details">
+                    <div style="max-width: 300px; word-wrap: break-word; line-height: 1.4;">
+                        ${this.escapeHtml(comment.content.substring(0, 150))}${comment.content.length > 150 ? '...' : ''}
+                    </div>
                 </td>
                 <td>
-                    <a href="/post/${comment.post_slug}" target="_blank" class="post-link">
+                    <a href="/post/${comment.post_slug}" target="_blank" class="post-link" style="color: #65d1f5; text-decoration: none; font-weight: 500;">
                         ${this.escapeHtml(comment.post_title)}
                     </a>
                 </td>
-                <td>${new Date(comment.created_at).toLocaleDateString()}</td>
+                <td class="log-timestamp">${new Date(comment.created_at).toLocaleDateString()}</td>
                 <td>
-                    <button class="delete-btn" onclick="adminDashboard.deleteComment(${comment.id}, '${this.escapeHtml(comment.author_name).replace(/'/g, "\\'")}', '${this.escapeHtml(comment.content.substring(0, 50)).replace(/'/g, "\\'")}...')">
+                    <button class="delete-btn" onclick="adminDashboard.deleteComment(${comment.id}, '${this.escapeHtml(comment.author_name).replace(/'/g, "\\'")}', '${this.escapeHtml(comment.content.substring(0, 50)).replace(/'/g, "\\'")}...')" style="background: #e74c3c; color: white; border: none; padding: 0.4rem 0.8rem; border-radius: 4px; font-size: 0.8rem; cursor: pointer;">
                         <i class="fas fa-trash"></i> Delete
                     </button>
                 </td>
@@ -1128,24 +1192,74 @@ class AdminDashboard {
         this.loadComments();
     }
 
+    async exportComments() {
+        try {
+            const filters = this.getCommentFilters();
+            let url = '/api/admin/comments';
+            
+            const queryParams = new URLSearchParams();
+            if (filters.postId) queryParams.append('postId', filters.postId);
+            if (filters.author) queryParams.append('author', filters.author);
+            if (filters.dateRange) queryParams.append('dateRange', filters.dateRange);
+            queryParams.append('limit', '10000'); // Large limit for export
+            
+            if (queryParams.toString()) {
+                url += `?${queryParams.toString()}`;
+            }
+
+            const response = await fetch(url, {
+                headers: {
+                    'Authorization': `Bearer ${this.token}`
+                }
+            });
+
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+
+            const comments = await response.json();
+            this.downloadCommentsAsCSV(comments);
+        } catch (error) {
+            console.error('Error exporting comments:', error);
+            this.showError('Failed to export comments');
+        }
+    }
+
+    downloadCommentsAsCSV(comments) {
+        const headers = ['Author', 'Email', 'Comment', 'Post Title', 'Date Created'];
+        
+        const csvContent = [
+            headers.join(','),
+            ...comments.map(comment => [
+                `"${(comment.author_name || '').replace(/"/g, '""')}"`,
+                `"${(comment.author_email || '').replace(/"/g, '""')}"`,
+                `"${(comment.content || '').replace(/"/g, '""')}"`,
+                `"${(comment.post_title || '').replace(/"/g, '""')}"`,
+                new Date(comment.created_at).toISOString()
+            ].join(','))
+        ].join('\n');
+
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement('a');
+        const url = URL.createObjectURL(blob);
+        
+        link.setAttribute('href', url);
+        link.setAttribute('download', `comments-export-${new Date().toISOString().split('T')[0]}.csv`);
+        link.style.visibility = 'hidden';
+        
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    }
+
     showCommentsLoading() {
         const tbody = document.getElementById('comments-table-body');
-        const tableContainer = document.querySelector('.comments-table-container');
-        const commentsContainer = document.querySelector('.comments-container');
         
-        if (!tbody || !tableContainer || !commentsContainer) return;
+        if (!tbody) return;
 
-        // Remove any existing empty state
-        const existingEmptyState = commentsContainer.querySelector('.comments-empty-state');
-        if (existingEmptyState) {
-            existingEmptyState.remove();
-        }
-
-        // Show table and add loading state
-        tableContainer.style.display = 'block';
         tbody.innerHTML = `
             <tr>
-                <td colspan="5" class="comments-loading">
+                <td colspan="5" class="logs-loading">
                     <i class="fas fa-spinner"></i>
                     Loading comments...
                 </td>
