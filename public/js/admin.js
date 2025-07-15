@@ -58,7 +58,8 @@ class AdminDashboard {
             console.log('Adding event listener to button with data-tab:', btn.dataset.tab);
             btn.addEventListener('click', (e) => {
                 e.preventDefault();
-                const tabName = e.target.dataset.tab;
+                const tabElement = e.target.closest('[data-tab]');
+                const tabName = tabElement ? tabElement.dataset.tab : null;
                 console.log(`Tab clicked: ${tabName}`);
                 if (tabName) {
                     this.switchTab(tabName);
