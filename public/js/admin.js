@@ -300,7 +300,8 @@ class AdminDashboard {
                 else if (tabName == 'activity-logs') {
                     console.log('Loading activity logs tab');
                     this.loadActivityLogs(1);
-                } else {
+                } 
+                else {
                     console.log(`No data loading needed for ${tabName} tab`);
                 }
             } 
