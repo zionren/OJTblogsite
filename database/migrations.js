@@ -61,11 +61,26 @@ const runMigrations = async () => {
             )
         `;
 
+        // Create MAC bans table
+        await client`
+            CREATE TABLE IF NOT EXISTS mac_bans (
+                id SERIAL PRIMARY KEY,
+                mac_address VARCHAR(17) NOT NULL,
+                reason TEXT,
+                banned_by VARCHAR(255),
+                is_active BOOLEAN DEFAULT true,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        `;
+
         // Create indexes
         await client`CREATE INDEX IF NOT EXISTS idx_posts_slug ON posts(slug)`;
         await client`CREATE INDEX IF NOT EXISTS idx_analytics_event_type ON analytics(event_type)`;
         await client`CREATE INDEX IF NOT EXISTS idx_analytics_timestamp ON analytics(timestamp)`;
         await client`CREATE INDEX IF NOT EXISTS idx_comments_post_id ON comments(post_id)`;
+        await client`CREATE INDEX IF NOT EXISTS idx_mac_bans_mac_address ON mac_bans(mac_address)`;
+        await client`CREATE INDEX IF NOT EXISTS idx_mac_bans_is_active ON mac_bans(is_active)`;
 
         console.log('Database migrations completed successfully');
     } catch (error) {

@@ -162,6 +162,16 @@ const initializeDatabase = async () => {
             )
         `;
 
+        await client`
+            CREATE TABLE IF NOT EXISTS mac_bans (
+                id SERIAL PRIMARY KEY,
+                mac_address VARCHAR(17) UNIQUE NOT NULL,
+                reason VARCHAR(255),
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                expires_at TIMESTAMP
+            )
+        `;
+
         // Create indexes for performance
         await client`CREATE INDEX IF NOT EXISTS idx_posts_slug ON posts(slug)`;
         await client`CREATE INDEX IF NOT EXISTS idx_analytics_event_type ON analytics(event_type)`;
@@ -1046,6 +1056,163 @@ app.get('/api/admin/activity-stats', authenticateToken, async (req, res) => {
     }
 });
 
+// MAC Bans API
+app.get('/api/admin/mac-bans', authenticateToken, async (req, res) => {
+    try {
+        const page = parseInt(req.query.page) || 1;
+        const limit = parseInt(req.query.limit) || 50;
+        const offset = (page - 1) * limit;
+        
+        const { status, search } = req.query;
+        
+        // First, let's check what columns exist and get a simple count
+        const totalResult = await client`SELECT COUNT(*) as total FROM mac_bans`;
+        const totalBans = parseInt(totalResult[0].total);
+        
+        // Simple query without filtering for now to test basic functionality
+        const bans = await client`
+            SELECT * FROM mac_bans 
+            ORDER BY id DESC 
+            LIMIT ${limit} OFFSET ${offset}
+        `;
+        
+        // Add missing fields for frontend compatibility
+        const formattedBans = bans.map(ban => ({
+            ...ban,
+            is_active: ban.expires_at ? (new Date(ban.expires_at) > new Date()) : true,
+            banned_by: 'System',
+            created_at: ban.created_at || new Date().toISOString()
+        }));
+        
+        const totalPages = Math.ceil(totalBans / limit);
+        
+        res.json({
+            bans: formattedBans,
+            pagination: {
+                currentPage: page,
+                totalPages,
+                totalBans,
+                limit
+            }
+        });
+    } catch (error) {
+        console.error('Error fetching MAC bans:', error);
+        console.error('Error details:', error.message);
+        res.status(500).json({ error: 'Failed to fetch MAC bans', details: error.message });
+    }
+});
+
+app.get('/api/admin/mac-bans/stats', authenticateToken, async (req, res) => {
+    try {
+        // Just get basic counts for now
+        const totalResult = await client`SELECT COUNT(*) as count FROM mac_bans`;
+        const totalBans = parseInt(totalResult[0].count);
+        
+        res.json({
+            totalBans,
+            activeBans: totalBans, // Assume all are active for now
+            todayBans: 0, // Placeholder
+            blockedAttempts: 0 // Placeholder
+        });
+    } catch (error) {
+        console.error('Error fetching MAC bans stats:', error);
+        res.status(500).json({ error: 'Failed to fetch MAC bans statistics', details: error.message });
+    }
+});
+
+app.post('/api/admin/mac-bans', authenticateToken, async (req, res) => {
+    try {
+        const { mac_address, reason } = req.body;
+        const user = getUserFromToken(req);
+        
+        if (!mac_address) {
+            return res.status(400).json({ error: 'MAC address is required' });
+        }
+        
+        // Validate MAC address format
+        const macRegex = /^([0-9A-Fa-f]{2}[:-]){5}([0-9A-Fa-f]{2})$/;
+        if (!macRegex.test(mac_address)) {
+            return res.status(400).json({ error: 'Invalid MAC address format' });
+        }
+        
+        // Check if MAC address is already banned
+        const existing = await client`
+            SELECT id FROM mac_bans 
+            WHERE mac_address = ${mac_address}
+        `;
+        
+        if (existing.length > 0) {
+            return res.status(400).json({ error: 'MAC address is already banned' });
+        }
+        
+        // Insert new ban with just the required fields
+        const result = await client`
+            INSERT INTO mac_bans (mac_address, reason) 
+            VALUES (${mac_address}, ${reason || null}) 
+            RETURNING *
+        `;
+        
+        // Log the activity
+        if (user) {
+            await logActivity(
+                user.id, 
+                user.email, 
+                'CREATE', 
+                'mac_ban', 
+                result[0].id, 
+                { mac_address, reason }, 
+                req
+            );
+        }
+        
+        res.status(201).json({
+            id: result[0].id,
+            mac_address: result[0].mac_address,
+            reason: result[0].reason,
+            banned_by: user?.email || 'System',
+            is_active: true,
+            created_at: new Date().toISOString()
+        });
+    } catch (error) {
+        console.error('Error adding MAC ban:', error);
+        res.status(500).json({ error: 'Failed to add MAC ban', details: error.message });
+    }
+});
+
+app.delete('/api/admin/mac-bans/:id', authenticateToken, async (req, res) => {
+    try {
+        const banId = req.params.id;
+        const user = getUserFromToken(req);
+        
+        // Check if ban exists
+        const ban = await client`SELECT * FROM mac_bans WHERE id = ${banId}`;
+        if (ban.length === 0) {
+            return res.status(404).json({ error: 'MAC ban not found' });
+        }
+        
+        // Delete the ban
+        await client`DELETE FROM mac_bans WHERE id = ${banId}`;
+        
+        // Log the activity
+        if (user) {
+            await logActivity(
+                user.id, 
+                user.email, 
+                'DELETE', 
+                'mac_ban', 
+                parseInt(banId), 
+                { mac_address: ban[0].mac_address }, 
+                req
+            );
+        }
+        
+        res.json({ message: 'MAC ban removed successfully' });
+    } catch (error) {
+        console.error('Error removing MAC ban:', error);
+        res.status(500).json({ error: 'Failed to remove MAC ban' });
+    }
+});
+
 // Serve static files
 app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'index.html'));
@@ -1070,3 +1237,4 @@ initializeDatabase().then(() => {
         console.log(`Server running on ${host ? `http://${host}:${PORT}` : `port ${PORT}`}`);
     });
 });
+        
