@@ -13,7 +13,7 @@ const { posts, analytics, comments, users } = require('./database/schema');
 const { eq, desc, sql, and, gte, lte, count } = require('drizzle-orm');
 
 const app = express();
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT || 4488; // Changed from 5000 to 4488 to match frontend
 
 // Database setup
 const connectionString = process.env.DATABASE_URL;
@@ -1230,11 +1230,20 @@ app.get('/post/:slug', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'post.html'));
 });
 
+// Add API endpoint to get server configuration
+app.get('/api/config', (req, res) => {
+    res.json({
+        port: PORT,
+        host: req.get('host'),
+        baseUrl: `${req.protocol}://${req.get('host')}`
+    });
+});
+
 // Initialize database and start server
 initializeDatabase().then(() => {
     const host = process.env.NODE_ENV === 'production' ? undefined : 'localhost';
     app.listen(PORT, host, () => {
         console.log(`Server running on ${host ? `http://${host}:${PORT}` : `port ${PORT}`}`);
+        console.log(`Admin panel: ${host ? `http://${host}:${PORT}` : ''}/admin`);
     });
 });
-        
