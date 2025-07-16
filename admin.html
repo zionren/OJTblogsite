@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard - OJT Blogger</title>
+    <link rel="stylesheet" href="/css/admin.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+</head>
+<body>
+    <!-- ...existing admin dashboard structure... -->
+    
+    <!-- Navigation Tabs -->
+    <nav class="admin-nav">
+        <div class="nav-container">
+            <div class="nav-tabs">
+                <button class="tab-btn active" data-tab="analytics">
+                    <i class="fas fa-chart-line"></i> Analytics
+                </button>
+                <button class="tab-btn" data-tab="posts">
+                    <i class="fas fa-file-alt"></i> Posts
+                </button>
+                <button class="tab-btn" data-tab="create-post">
+                    <i class="fas fa-plus"></i> Create Post
+                </button>
+                <button class="tab-btn" data-tab="comments">
+                    <i class="fas fa-comments"></i> Comments
+                </button>
+                <button class="tab-btn" data-tab="activity-logs">
+                    <i class="fas fa-history"></i> Activity Logs
+                </button>
+                <button class="tab-btn" data-tab="mac-bans">
+                    <i class="fas fa-ban"></i> MAC Bans
+                </button>
+            </div>
+            <button id="logout-btn" class="logout-btn">
+                <i class="fas fa-sign-out-alt"></i> Logout
+            </button>
+        </div>
+    </nav>
+
+    <!-- MAC Bans Tab Content -->
+    <div id="mac-bans-tab" class="tab-content">
+        <div class="dashboard-header">
+            <h1><i class="fas fa-ban"></i> MAC Address Banning</h1>
+            <p>Manage banned MAC addresses to prevent access from specific devices</p>
+        </div>
+
+        <!-- MAC Bans Statistics -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-icon">
+                    <i class="fas fa-ban"></i>
+                </div>
+                <div class="stat-content">
+                    <h3 id="total-mac-bans-count">0</h3>
+                    <p>Total Bans</p>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">
+                    <i class="fas fa-shield-alt"></i>
+                </div>
+                <div class="stat-content">
+                    <h3 id="active-mac-bans-count">0</h3>
+                    <p>Active Bans</p>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">
+                    <i class="fas fa-calendar-day"></i>
+                </div>
+                <div class="stat-content">
+                    <h3 id="today-mac-bans-count">0</h3>
+                    <p>Today's Bans</p>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">
+                    <i class="fas fa-exclamation-triangle"></i>
+                </div>
+                <div class="stat-content">
+                    <h3 id="blocked-attempts-count">0</h3>
+                    <p>Blocked Attempts</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Add New MAC Ban Form -->
+        <div class="mac-ban-form-container">
+            <h2><i class="fas fa-plus-circle"></i> Add New MAC Ban</h2>
+            <form id="add-mac-ban-form" class="mac-ban-form">
+                <div class="form-group">
+                    <label for="mac-address-input">
+                        <i class="fas fa-ethernet"></i> MAC Address
+                    </label>
+                    <input 
+                        type="text" 
+                        id="mac-address-input" 
+                        name="mac_address" 
+                        placeholder="00:1B:44:11:3A:B7" 
+                        required
+                        pattern="^([0-9A-Fa-f]{2}[:-]){5}([0-9A-Fa-f]{2})$"
+                        title="Enter a valid MAC address (e.g., 00:1B:44:11:3A:B7)"
+                    >
+                </div>
+                <div class="form-group">
+                    <label for="ban-reason-input">
+                        <i class="fas fa-comment"></i> Reason (Optional)
+                    </label>
+                    <textarea 
+                        id="ban-reason-input" 
+                        name="reason" 
+                        placeholder="Enter reason for banning this MAC address..."
+                        rows="3"
+                    ></textarea>
+                </div>
+                <button type="submit" class="btn btn-danger">
+                    <i class="fas fa-ban"></i> Add MAC Ban
+                </button>
+            </form>
+        </div>
+
+        <!-- MAC Bans Management -->
+        <div class="logs-container">
+            <div class="logs-header">
+                <h2><i class="fas fa-list"></i> Banned MAC Addresses</h2>
+                <div class="logs-actions">
+                    <button id="refresh-mac-bans" class="btn btn-secondary">
+                        <i class="fas fa-sync-alt"></i> Refresh
+                    </button>
+                    <button id="export-mac-bans" class="btn btn-info">
+                        <i class="fas fa-download"></i> Export CSV
+                    </button>
+                </div>
+            </div>
+
+            <!-- MAC Bans Filters -->
+            <div class="logs-filters">
+                <div class="filter-group">
+                    <label for="mac-ban-status-filter">Status:</label>
+                    <select id="mac-ban-status-filter">
+                        <option value="">All Status</option>
+                        <option value="active">Active</option>
+                        <option value="inactive">Inactive</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label for="mac-ban-search-filter">Search MAC:</label>
+                    <input type="text" id="mac-ban-search-filter" placeholder="Search MAC address...">
+                </div>
+                <div class="filter-actions">
+                    <button id="apply-mac-ban-filters" class="btn btn-primary">
+                        <i class="fas fa-filter"></i> Apply
+                    </button>
+                    <button id="clear-mac-ban-filters" class="btn btn-secondary">
+                        <i class="fas fa-times"></i> Clear
+                    </button>
+                </div>
+            </div>
+
+            <!-- MAC Bans Table -->
+            <div class="logs-table-container">
+                <table class="logs-table">
+                    <thead>
+                        <tr>
+                            <th><i class="fas fa-ethernet"></i> MAC Address</th>
+                            <th><i class="fas fa-comment"></i> Reason</th>
+                            <th><i class="fas fa-user"></i> Banned By</th>
+                            <th><i class="fas fa-calendar"></i> Date</th>
+                            <th><i class="fas fa-cogs"></i> Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="mac-bans-table-body">
+                        <!-- MAC bans will be populated here -->
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- MAC Bans Pagination -->
+            <div class="logs-pagination">
+                <button id="mac-bans-prev-page" class="btn btn-secondary" disabled>
+                    <i class="fas fa-chevron-left"></i> Previous
+                </button>
+                <span id="mac-bans-pagination-info">Page 1 of 1 (0 total)</span>
+                <button id="mac-bans-next-page" class="btn btn-secondary" disabled>
+                    Next <i class="fas fa-chevron-right"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MAC Ban Delete Confirmation Modal -->
+    <div id="mac-ban-delete-modal-overlay" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3><i class="fas fa-exclamation-triangle"></i> Confirm MAC Ban Removal</h3>
+            </div>
+            <div class="modal-body">
+                <p>Are you sure you want to remove this MAC address ban?</p>
+                <div id="mac-ban-preview" class="mac-ban-preview">
+                    <!-- MAC address preview will be inserted here -->
+                </div>
+                <p class="warning-text">
+                    <i class="fas fa-info-circle"></i>
+                    This action cannot be undone. The device will be able to access the site again.
+                </p>
+            </div>
+            <div class="modal-footer">
+                <button id="mac-ban-delete-cancel" class="btn btn-secondary">
+                    <i class="fas fa-times"></i> Cancel
+                </button>
+                <button id="mac-ban-delete-confirm" class="btn btn-danger">
+                    <i class="fas fa-trash"></i> Remove Ban
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ...existing modals and scripts... -->
+    
+    <script src="/js/auth.js"></script>
+    <script src="/js/admin.js"></script>
+</body>
+</html>

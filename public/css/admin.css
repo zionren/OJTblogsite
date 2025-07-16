@@ -1372,12 +1372,13 @@
     font-size: 0.95rem;
     cursor: pointer;
     transition: all 0.3s ease;
-    box-shadow: 0 2px 4px rgba(46, 204, 113, 0.3);
     display: flex;
     align-items: center;
     gap: 0.5rem;
     text-transform: uppercase;
     letter-spacing: 0.5px;
+    box-shadow: 0 2px 4px rgba(46, 204, 113, 0.3);
+    white-space: nowrap;
 }
 
 #refresh-comments:hover {
@@ -2496,55 +2497,270 @@
     transform: scale(0.95);
 }
 
-/* Responsive design for stats modal */
-@media (max-width: 768px) {
-    .post-stats-modal-content {
-        width: 98vw;
-        margin: 1rem;
-    }
-    
-    .stats-overview {
-        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-        gap: 0.5rem;
-    }
-    
-    .stat-card {
-        padding: 1rem;
-        flex-direction: column;
-        text-align: center;
-    }
-    
-    .stats-charts {
-        grid-template-columns: 1fr;
-        gap: 1rem;
-    }
-    
-    .chart-container {
-        padding: 1rem;
-    }
-    
-    .modal-header {
-        padding: 1rem;
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 1rem;
-        position: relative;
-    }
-    
-    .modal-header-actions {
-        position: static;
-        transform: none;
-        width: 100%;
-        justify-content: flex-end;
-    }
-    
-    .modal-close {
-        top: 10px;
-        right: 10px;
-    }
-    
-    .export-pdf-btn {
-        font-size: 0.75rem;
-        padding: 0.35rem 0.7rem;
-    }
+/* MAC Address Banning Styles */
+.mac-ban-form-container {
+    background: var(--card-background);
+    border-radius: 12px;
+    padding: 2rem;
+    margin: 2rem 0;
+    border: 1px solid var(--border-color);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    transition: all 0.3s ease;
 }
+
+.mac-ban-form-container:hover {
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+    transform: translateY(-2px);
+}
+
+.mac-ban-form-container h2 {
+    color: var(--primary-color);
+    margin-bottom: 1.5rem;
+    font-size: 1.5rem;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.mac-ban-form-container h2 i {
+    color: #e74c3c;
+    font-size: 1.2rem;
+}
+
+.mac-ban-form {
+    display: grid;
+    grid-template-columns: 1fr 1fr auto;
+    gap: 1.5rem;
+    align-items: end;
+}
+
+.mac-ban-form .form-group {
+    display: flex;
+    flex-direction: column;
+}
+
+.mac-ban-form .form-group label {
+    color: var(--text-color);
+    font-weight: 500;
+    margin-bottom: 0.5rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.95rem;
+}
+
+.mac-ban-form .form-group label i {
+    color: var(--primary-color);
+    font-size: 0.9rem;
+}
+
+.mac-ban-form input,
+.mac-ban-form textarea {
+    padding: 0.75rem;
+    border: 2px solid var(--border-color);
+    border-radius: 8px;
+    background: var(--input-background);
+    color: var(--text-color);
+    font-size: 0.95rem;
+    transition: all 0.3s ease;
+    font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+}
+
+.mac-ban-form input:focus,
+.mac-ban-form textarea:focus {
+    outline: none;
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
+    background: var(--card-background);
+}
+
+.mac-ban-form input::placeholder,
+.mac-ban-form textarea::placeholder {
+    color: var(--muted-color);
+    font-style: italic;
+}
+
+.mac-ban-form textarea {
+    resize: vertical;
+    min-height: 80px;
+    font-family: inherit;
+}
+
+.mac-ban-form button[type="submit"] {
+    padding: 0.75rem 1.5rem;
+    background: linear-gradient(135deg, #e74c3c, #c0392b);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-weight: 600;
+    font-size: 0.95rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    height: fit-content;
+    white-space: nowrap;
+}
+
+.mac-ban-form button[type="submit"]:hover {
+    background: linear-gradient(135deg, #c0392b, #a93226);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(231, 76, 60, 0.3);
+}
+
+.mac-ban-form button[type="submit"]:active {
+    transform: translateY(0);
+}
+
+/* MAC Ban Table Styles */
+.mac-bans-table-container {
+    background: var(--card-background);
+    border-radius: 12px;
+    overflow: hidden;
+    border: 1px solid var(--border-color);
+    margin-top: 1rem;
+}
+
+.mac-bans-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.mac-bans-table th {
+    background: linear-gradient(135deg, var(--primary-color), #2980b9);
+    color: white;
+    padding: 1rem;
+    text-align: left;
+    font-weight: 600;
+    font-size: 0.9rem;
+    letter-spacing: 0.5px;
+    border: none;
+}
+
+.mac-bans-table th i {
+    margin-right: 0.5rem;
+    opacity: 0.9;
+}
+
+.mac-bans-table td {
+    padding: 1rem;
+    border-bottom: 1px solid var(--border-color);
+    vertical-align: middle;
+    font-size: 0.9rem;
+}
+
+.mac-bans-table tr:hover {
+    background: var(--hover-background);
+}
+
+.mac-bans-table tr:last-child td {
+    border-bottom: none;
+}
+
+/* MAC Address Column Styling */
+.mac-bans-table td:first-child {
+    font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+    font-weight: 600;
+    color: var(--primary-color);
+    background: rgba(52, 152, 219, 0.05);
+    border-left: 3px solid var(--primary-color);
+}
+
+/* MAC Ban Actions Column */
+.mac-ban-actions {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.mac-ban-actions .status-badge {
+    padding: 0.25rem 0.75rem;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.mac-ban-actions .status-badge.status-published {
+    background: linear-gradient(135deg, #27ae60, #2ecc71);
+    color: white;
+}
+
+.mac-ban-actions .status-badge.status-draft {
+    background: linear-gradient(135deg, #95a5a6, #bdc3c7);
+    color: white;
+}
+
+/* MAC Ban Delete Modal */
+.mac-ban-preview {
+    background: var(--code-background);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    padding: 1rem;
+    margin: 1rem 0;
+}
+
+.mac-ban-preview-content {
+    font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+    color: var(--text-color);
+    line-height: 1.6;
+}
+
+.mac-ban-preview-content strong {
+    color: var(--primary-color);
+    font-weight: 600;
+}
+
+/* MAC Ban Stats Enhancements */
+#mac-bans-tab .stats-grid .stat-card {
+    position: relative;
+    overflow: hidden;
+}
+
+#mac-bans-tab .stats-grid .stat-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, #e74c3c, #c0392b);
+}
+
+#mac-bans-tab .stats-grid .stat-card:nth-child(2)::before {
+    background: linear-gradient(90deg, #27ae60, #2ecc71);
+}
+
+#mac-bans-tab .stats-grid .stat-card:nth-child(3)::before {
+    background: linear-gradient(90deg, #f39c12, #e67e22);
+}
+
+#mac-bans-tab .stats-grid .stat-card:nth-child(4)::before {
+    background: linear-gradient(90deg, #8e44ad, #9b59b6);
+}
+
+/* Loading States for MAC Bans */
+.mac-bans-loading {
+    text-align: center;
+    padding: 3rem;
+    color: var(--muted-color);
+    font-style: italic;
+}
+
+.mac-bans-loading i {
+    animation: spin 1s linear infinite;
+    margin-right: 0.5rem;
+    color: var(--primary-color);
+}
+
+/* MAC Ban Filters Enhancement */
+#mac-bans-tab .logs-filters {
+    background: var(--card-background);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+}
+

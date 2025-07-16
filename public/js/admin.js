@@ -20,6 +20,12 @@ class AdminDashboard {
         this.currentLogsPage = 1;
         this.totalLogsPages = 1;
         
+        // MAC address banning
+        this.cachedMacBans = null;
+        this.currentMacBansPage = 1;
+        this.totalMacBansPages = 1;
+        this.deletingMacBanId = null;
+        
         console.log('AdminDashboard constructor - token:', this.token ? 'present' : 'missing');
         console.log('AdminDashboard constructor - initial cache state:', {
             analytics: this.cachedAnalytics,
@@ -203,17 +209,8 @@ class AdminDashboard {
         // Activity logs event listeners
         this.setupActivityLogsEventListeners();
 
-        // Post statistics modal events
-        document.getElementById('post-stats-close').addEventListener('click', () => {
-            this.hidePostStatsModal();
-        });
-
-        // Close post stats modal when clicking outside
-        document.getElementById('post-stats-modal').addEventListener('click', (e) => {
-            if (e.target.id === 'post-stats-modal') {
-                this.hidePostStatsModal();
-            }
-        });
+        // MAC address banning event listeners
+        this.setupMacBansEventListeners();
 
         // Export PDF button event listener
         document.getElementById('export-post-pdf')?.addEventListener('click', () => {
@@ -311,6 +308,10 @@ class AdminDashboard {
                 else if (tabName == 'activity-logs') {
                     console.log('Loading activity logs tab');
                     this.loadActivityLogs(1);
+                } 
+                else if (tabName == 'mac-bans') {
+                    console.log('Loading MAC address bans tab');
+                    this.loadMacBans(1);
                 } 
                 else {
                     console.log(`No data loading needed for ${tabName} tab`);
@@ -1180,34 +1181,354 @@ class AdminDashboard {
         }
     }
 
-    refreshComments() {
-        this.cachedComments = null;
-        this.showCommentsLoading();
-        this.loadComments();
-    }
-
-    applyCommentFilters() {
-        this.cachedComments = null;
-        this.showCommentsLoading();
-        this.loadComments();
-    }
-
-    async exportComments() {
+    // MAC Address Banning Methods
+    async loadMacBans(page = 1, filters = {}) {
+        console.log('Loading MAC address bans, page:', page, 'filters:', filters);
+        
         try {
-            const filters = this.getCommentFilters();
-            let url = '/api/admin/comments';
+            this.showMacBansLoading();
             
-            const queryParams = new URLSearchParams();
-            if (filters.postId) queryParams.append('postId', filters.postId);
-            if (filters.author) queryParams.append('author', filters.author);
-            if (filters.dateRange) queryParams.append('dateRange', filters.dateRange);
-            queryParams.append('limit', '10000'); // Large limit for export
-            
-            if (queryParams.toString()) {
-                url += `?${queryParams.toString()}`;
+            const queryParams = new URLSearchParams({
+                page: page.toString(),
+                limit: '50',
+                ...filters
+            });
+
+            console.log('Fetching MAC bans with params:', queryParams.toString());
+
+            const response = await fetch(`/api/admin/mac-bans?${queryParams}`, {
+                headers: {
+                    'Authorization': `Bearer ${this.token}`
+                }
+            });
+
+            console.log('MAC bans response status:', response.status);
+
+            if (!response.ok) {
+                const errorText = await response.text();
+                console.error('MAC bans API error:', response.status, errorText);
+                throw new Error(`HTTP error! status: ${response.status}, message: ${errorText}`);
             }
 
-            const response = await fetch(url, {
+            const data = await response.json();
+            console.log('MAC bans data received:', data);
+            
+            this.cachedMacBans = data.bans;
+            this.renderMacBans(data.bans);
+            this.updateMacBansPagination(data.pagination);
+            
+            // Also load stats when loading bans
+            await this.loadMacBansStats();
+        } catch (error) {
+            console.error('Error loading MAC address bans:', error);
+            this.showError('Failed to load MAC address bans: ' + error.message);
+        } finally {
+            this.hideMacBansLoading();
+        }
+    }
+
+    async loadMacBansStats() {
+        console.log('Loading MAC bans stats...');
+        
+        try {
+            const response = await fetch('/api/admin/mac-bans/stats', {
+                headers: {
+                    'Authorization': `Bearer ${this.token}`
+                }
+            });
+
+            console.log('MAC bans stats response status:', response.status);
+
+            if (!response.ok) {
+                const errorText = await response.text();
+                console.error('MAC bans stats API error:', response.status, errorText);
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+
+            const stats = await response.json();
+            console.log('MAC bans stats data received:', stats);
+            this.renderMacBansStats(stats);
+        } catch (error) {
+            console.error('Error loading MAC bans stats:', error);
+        }
+    }
+
+    renderMacBans(bans) {
+        const tbody = document.getElementById('mac-bans-table-body');
+        
+        if (!bans || bans.length === 0) {
+            tbody.innerHTML = `
+                <tr>
+                    <td colspan="5" class="logs-empty-state">
+                        <i class="fas fa-ban"></i>
+                        <h3>No MAC Address Bans Found</h3>
+                        <p>No banned MAC addresses match your current filters.</p>
+                    </td>
+                </tr>
+            `;
+            return;
+        }
+
+        tbody.innerHTML = bans.map(ban => {
+            const createdDate = new Date(ban.created_at).toLocaleString();
+            const isActive = ban.is_active;
+            
+            return `
+                <tr>
+                    <td class="log-timestamp">${ban.mac_address}</td>
+                    <td class="log-details">${this.escapeHtml(ban.reason || 'No reason provided')}</td>
+                    <td class="log-user">${ban.banned_by || 'System'}</td>
+                    <td class="log-timestamp">${createdDate}</td>
+                    <td class="log-ip-agent">
+                        <span class="status-badge ${isActive ? 'status-published' : 'status-draft'}">
+                            ${isActive ? 'Active' : 'Inactive'}
+                        </span>
+                        <button class="delete-btn" onclick="adminDashboard.deleteMacBan(${ban.id}, '${ban.mac_address}')" 
+                                style="background: #e74c3c; color: white; border: none; padding: 0.4rem 0.8rem; border-radius: 4px; font-size: 0.8rem; cursor: pointer; margin-left: 0.5rem;">
+                            <i class="fas fa-trash"></i> Remove
+                        </button>
+                    </td>
+                </tr>
+            `;
+        }).join('');
+    }
+
+    renderMacBansStats(stats) {
+        document.getElementById('total-mac-bans-count').textContent = stats.totalBans || 0;
+        document.getElementById('active-mac-bans-count').textContent = stats.activeBans || 0;
+        document.getElementById('today-mac-bans-count').textContent = stats.todayBans || 0;
+        document.getElementById('blocked-attempts-count').textContent = stats.blockedAttempts || 0;
+    }
+
+    updateMacBansPagination(pagination) {
+        const prevBtn = document.getElementById('mac-bans-prev-page');
+        const nextBtn = document.getElementById('mac-bans-next-page');
+        const info = document.getElementById('mac-bans-pagination-info');
+        
+        if (prevBtn && nextBtn && info) {
+            prevBtn.disabled = pagination.currentPage <= 1;
+            nextBtn.disabled = pagination.currentPage >= pagination.totalPages;
+            
+            info.textContent = `Page ${pagination.currentPage} of ${pagination.totalPages} (${pagination.totalBans} total)`;
+            
+            // Store current pagination state
+            this.currentMacBansPage = pagination.currentPage;
+            this.totalMacBansPages = pagination.totalPages;
+        }
+    }
+
+    setupMacBansEventListeners() {
+        // Refresh MAC bans button
+        document.getElementById('refresh-mac-bans')?.addEventListener('click', () => {
+            this.loadMacBans(1);
+        });
+
+        // Apply filters button
+        document.getElementById('apply-mac-ban-filters')?.addEventListener('click', () => {
+            const filters = this.getMacBanFilters();
+            this.loadMacBans(1, filters);
+        });
+
+        // Clear filters button
+        document.getElementById('clear-mac-ban-filters')?.addEventListener('click', () => {
+            this.clearMacBanFilters();
+            this.loadMacBans(1);
+        });
+
+        // Add MAC ban form
+        document.getElementById('add-mac-ban-form')?.addEventListener('submit', (e) => {
+            e.preventDefault();
+            this.addMacBan();
+        });
+
+        // Pagination buttons
+        document.getElementById('mac-bans-prev-page')?.addEventListener('click', () => {
+            if (this.currentMacBansPage > 1) {
+                const filters = this.getMacBanFilters();
+                this.loadMacBans(this.currentMacBansPage - 1, filters);
+            }
+        });
+
+        document.getElementById('mac-bans-next-page')?.addEventListener('click', () => {
+            if (this.currentMacBansPage < this.totalMacBansPages) {
+                const filters = this.getMacBanFilters();
+                this.loadMacBans(this.currentMacBansPage + 1, filters);
+            }
+        });
+
+        // Export MAC bans button
+        document.getElementById('export-mac-bans')?.addEventListener('click', () => {
+            this.exportMacBans();
+        });
+
+        // MAC ban delete modal events
+        document.getElementById('mac-ban-delete-cancel')?.addEventListener('click', () => {
+            this.hideMacBanDeleteModal();
+        });
+
+        document.getElementById('mac-ban-delete-confirm')?.addEventListener('click', () => {
+            this.confirmMacBanDelete();
+        });
+
+        // Close MAC ban delete modal when clicking overlay
+        document.getElementById('mac-ban-delete-modal-overlay')?.addEventListener('click', (e) => {
+            if (e.target.id === 'mac-ban-delete-modal-overlay') {
+                this.hideMacBanDeleteModal();
+            }
+        });
+
+        // Escape key for MAC ban delete modal
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && document.getElementById('mac-ban-delete-modal-overlay')?.classList.contains('active')) {
+                this.hideMacBanDeleteModal();
+            }
+        });
+    }
+
+    getMacBanFilters() {
+        const statusFilter = document.getElementById('mac-ban-status-filter')?.value || '';
+        const searchFilter = document.getElementById('mac-ban-search-filter')?.value || '';
+        
+        const filters = {};
+        if (statusFilter) filters.status = statusFilter;
+        if (searchFilter) filters.search = searchFilter;
+        
+        return filters;
+    }
+
+    clearMacBanFilters() {
+        const statusFilter = document.getElementById('mac-ban-status-filter');
+        const searchFilter = document.getElementById('mac-ban-search-filter');
+        
+        if (statusFilter) statusFilter.value = '';
+        if (searchFilter) searchFilter.value = '';
+    }
+
+    async addMacBan() {
+        const form = document.getElementById('add-mac-ban-form');
+        const formData = new FormData(form);
+        
+        const macAddress = formData.get('mac_address').trim();
+        const reason = formData.get('reason').trim();
+        
+        // Validate MAC address format
+        if (!this.isValidMacAddress(macAddress)) {
+            this.showError('Please enter a valid MAC address (e.g., 00:1B:44:11:3A:B7)');
+            return;
+        }
+
+        try {
+            const response = await fetch('/api/admin/mac-bans', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${this.token}`
+                },
+                body: JSON.stringify({
+                    mac_address: macAddress,
+                    reason: reason
+                })
+            });
+
+            if (!response.ok) {
+                const error = await response.json();
+                throw new Error(error.message || 'Failed to add MAC address ban');
+            }
+
+            this.showSuccess('MAC address banned successfully');
+            form.reset();
+            
+            // Clear cache and reload
+            this.cachedMacBans = null;
+            this.loadMacBans(1);
+
+        } catch (error) {
+            console.error('Error adding MAC ban:', error);
+            this.showError('Failed to add MAC address ban: ' + error.message);
+        }
+    }
+
+    isValidMacAddress(mac) {
+        // Regular expression for MAC address validation
+        const macRegex = /^([0-9A-Fa-f]{2}[:-]){5}([0-9A-Fa-f]{2})$/;
+        return macRegex.test(mac);
+    }
+
+    deleteMacBan(banId, macAddress) {
+        this.deletingMacBanId = banId;
+        
+        const macPreviewDiv = document.getElementById('mac-ban-preview');
+        if (macPreviewDiv) {
+            macPreviewDiv.innerHTML = `
+                <div class="mac-ban-preview-content">
+                    <strong>MAC Address:</strong> ${this.escapeHtml(macAddress)}
+                </div>
+            `;
+        }
+        
+        this.showMacBanDeleteModal();
+    }
+
+    showMacBanDeleteModal() {
+        const modal = document.getElementById('mac-ban-delete-modal-overlay');
+        if (modal) {
+            modal.classList.add('active');
+            document.body.style.overflow = 'hidden';
+        }
+    }
+
+    hideMacBanDeleteModal() {
+        const modal = document.getElementById('mac-ban-delete-modal-overlay');
+        if (modal) {
+            modal.classList.remove('active');
+            document.body.style.overflow = '';
+        }
+        this.deletingMacBanId = null;
+    }
+
+    async confirmMacBanDelete() {
+        if (!this.deletingMacBanId) return;
+
+        try {
+            const response = await fetch(`/api/admin/mac-bans/${this.deletingMacBanId}`, {
+                method: 'DELETE',
+                headers: {
+                    'Authorization': `Bearer ${this.token}`
+                }
+            });
+
+            if (!response.ok) {
+                throw new Error('Failed to remove MAC address ban');
+            }
+
+            this.hideMacBanDeleteModal();
+            this.showSuccess('MAC address ban removed successfully');
+            
+            this.cachedMacBans = null;
+            this.loadMacBans(1);
+
+        } catch (error) {
+            console.error('Error removing MAC ban:', error);
+            this.hideMacBanDeleteModal();
+            this.showError('Failed to remove MAC address ban');
+        }
+    }
+
+    refreshMacBans() {
+        this.cachedMacBans = null;
+        this.showMacBansLoading();
+        this.loadMacBans(1);
+    }
+
+    async exportMacBans() {
+        try {
+            const filters = this.getMacBanFilters();
+            const queryParams = new URLSearchParams({
+                limit: '10000', // Large limit for export
+                ...filters
+            });
+
+            const response = await fetch(`/api/admin/mac-bans?${queryParams}`, {
                 headers: {
                     'Authorization': `Bearer ${this.token}`
                 }
@@ -1217,25 +1538,25 @@ class AdminDashboard {
                 throw new Error(`HTTP error! status: ${response.status}`);
             }
 
-            const comments = await response.json();
-            this.downloadCommentsAsCSV(comments);
+            const data = await response.json();
+            this.downloadMacBansAsCSV(data.bans);
         } catch (error) {
-            console.error('Error exporting comments:', error);
-            this.showError('Failed to export comments');
+            console.error('Error exporting MAC bans:', error);
+            this.showError('Failed to export MAC address bans');
         }
     }
 
-    downloadCommentsAsCSV(comments) {
-        const headers = ['Author', 'Email', 'Comment', 'Post Title', 'Date Created'];
+    downloadMacBansAsCSV(bans) {
+        const headers = ['MAC Address', 'Reason', 'Banned By', 'Status', 'Created Date'];
         
         const csvContent = [
             headers.join(','),
-            ...comments.map(comment => [
-                `"${(comment.author_name || '').replace(/"/g, '""')}"`,
-                `"${(comment.author_email || '').replace(/"/g, '""')}"`,
-                `"${(comment.content || '').replace(/"/g, '""')}"`,
-                `"${(comment.post_title || '').replace(/"/g, '""')}"`,
-                new Date(comment.created_at).toISOString()
+            ...bans.map(ban => [
+                `"${(ban.mac_address || '').replace(/"/g, '""')}"`,
+                `"${(ban.reason || '').replace(/"/g, '""')}"`,
+                `"${(ban.banned_by || '').replace(/"/g, '""')}"`,
+                ban.is_active ? 'Active' : 'Inactive',
+                new Date(ban.created_at).toISOString()
             ].join(','))
         ].join('\n');
 
@@ -1244,7 +1565,7 @@ class AdminDashboard {
         const url = URL.createObjectURL(blob);
         
         link.setAttribute('href', url);
-        link.setAttribute('download', `comments-export-${new Date().toISOString().split('T')[0]}.csv`);
+        link.setAttribute('download', `mac-bans-export-${new Date().toISOString().split('T')[0]}.csv`);
         link.style.visibility = 'hidden';
         
         document.body.appendChild(link);
@@ -1252,8 +1573,8 @@ class AdminDashboard {
         document.body.removeChild(link);
     }
 
-    showCommentsLoading() {
-        const tbody = document.getElementById('comments-table-body');
+    showMacBansLoading() {
+        const tbody = document.getElementById('mac-bans-table-body');
         
         if (!tbody) return;
 
@@ -1261,10 +1582,14 @@ class AdminDashboard {
             <tr>
                 <td colspan="5" class="logs-loading">
                     <i class="fas fa-spinner"></i>
-                    Loading comments...
+                    Loading MAC address bans...
                 </td>
             </tr>
         `;
+    }
+
+    hideMacBansLoading() {
+        // Loading is hidden when renderMacBans is called
     }
 
     // Activity Logs functionality
@@ -1519,6 +1844,93 @@ class AdminDashboard {
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
+    }
+
+    refreshComments() {
+        this.cachedComments = null;
+        this.showCommentsLoading();
+        this.loadComments();
+    }
+
+    applyCommentFilters() {
+        this.cachedComments = null;
+        this.showCommentsLoading();
+        this.loadComments();
+    }
+
+    async exportComments() {
+        try {
+            const filters = this.getCommentFilters();
+            let url = '/api/admin/comments';
+            
+            const queryParams = new URLSearchParams();
+            if (filters.postId) queryParams.append('postId', filters.postId);
+            if (filters.author) queryParams.append('author', filters.author);
+            if (filters.dateRange) queryParams.append('dateRange', filters.dateRange);
+            queryParams.append('limit', '10000'); // Large limit for export
+            
+            if (queryParams.toString()) {
+                url += `?${queryParams.toString()}`;
+            }
+
+            const response = await fetch(url, {
+                headers: {
+                    'Authorization': `Bearer ${this.token}`
+                }
+            });
+
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+
+            const comments = await response.json();
+            this.downloadCommentsAsCSV(comments);
+        } catch (error) {
+            console.error('Error exporting comments:', error);
+            this.showError('Failed to export comments');
+        }
+    }
+
+    downloadCommentsAsCSV(comments) {
+        const headers = ['Author', 'Email', 'Comment', 'Post Title', 'Date Created'];
+        
+        const csvContent = [
+            headers.join(','),
+            ...comments.map(comment => [
+                `"${(comment.author_name || '').replace(/"/g, '""')}"`,
+                `"${(comment.author_email || '').replace(/"/g, '""')}"`,
+                `"${(comment.content || '').replace(/"/g, '""')}"`,
+                `"${(comment.post_title || '').replace(/"/g, '""')}"`,
+                new Date(comment.created_at).toISOString()
+            ].join(','))
+        ].join('\n');
+
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement('a');
+        const url = URL.createObjectURL(blob);
+        
+        link.setAttribute('href', url);
+        link.setAttribute('download', `comments-export-${new Date().toISOString().split('T')[0]}.csv`);
+        link.style.visibility = 'hidden';
+        
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    }
+
+    showCommentsLoading() {
+        const tbody = document.getElementById('comments-table-body');
+        
+        if (!tbody) return;
+
+        tbody.innerHTML = `
+            <tr>
+                <td colspan="5" class="logs-loading">
+                    <i class="fas fa-spinner"></i>
+                    Loading comments...
+                </td>
+            </tr>
+        `;
     }
 
     // Notification and error handling methods
