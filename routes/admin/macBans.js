@@ -1,3 +1,5 @@
+// MAC address banning is no longer being used in this application. This is a feature
+// that is now trashed due to difficulties.
 const express = require('express');
 const router = express.Router();
 const postgres = require('postgres');
