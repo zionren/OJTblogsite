@@ -76,25 +76,50 @@ class AdminDashboard {
             });
         });
 
-        // Logout
+        
         document.getElementById('logout-btn').addEventListener('click', () => {
-            this.showLogoutModal();
+            try {
+                this.showLogoutModal();
+            }
+            catch (error) {
+                console.error("failed to show logout modal", error);
+                this.showError('Logout modal did not appear. Please contact the administrator.');
+
+            }
         });
 
         // Logout modal events
         document.getElementById('logout-cancel').addEventListener('click', () => {
-            this.hideLogoutModal();
+            try {
+                this.hideLogoutModal();
+            
+            }
+            catch (error) {
+                console.error("failed to hide loghouyt modal.", error);
+                this.showError('Logout modal has issues. Please contact the administrator.');
+            }
         });
 
         document.getElementById('logout-confirm').addEventListener('click', () => {
-            this.logout();
+            try {
+                this.logout();
+            }
+            catch (error) {
+                this.showError('Logout failed. Please contact the administrator.');
+            }
         });
 
         // Close modal when clicking overlay
         document.getElementById('logout-modal-overlay').addEventListener('click', (e) => {
-            if (e.target.id === 'logout-modal-overlay') {
-                this.hideLogoutModal();
+            try {
+                if (e.target.id === 'logout-modal-overlay') {
+                    this.hideLogoutModal();
+                }
             }
+            catch (error) {
+                this.showError('Close modal failed to materuialize.');
+            }
+            
         });
 
         // Close modal with Escape key
