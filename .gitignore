@@ -60,3 +60,7 @@ Thumbs.db
 # Temporary files
 *.tmp
 *.temp
+
+*.DEPLOYMENT
+*.RACE_CONDITION_FIXES
+*.VALIDATION_SUMMARY

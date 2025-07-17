@@ -70,7 +70,8 @@ router.get('/', async (req, res) => {
                 limit
             }
         });
-    } catch (error) {
+    } 
+    catch (error) {
         console.error('Error fetching MAC bans:', error);
         res.status(500).json({ error: 'Failed to fetch MAC bans' });
     }

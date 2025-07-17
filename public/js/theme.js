@@ -1,5 +1,5 @@
-// Theme management functionality
 class ThemeManager {
+
     constructor() {
         this.currentTheme = localStorage.getItem('theme') || 'light';
         this.init();
