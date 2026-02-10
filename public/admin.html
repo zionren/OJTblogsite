@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -11,6 +12,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
+
 <body>
     <div class="admin-container">
         <!-- Login Form -->
@@ -26,7 +28,8 @@
                         <label for="password">Password:</label>
                         <div class="password-input-container">
                             <input type="password" id="password" name="password" required>
-                            <button type="button" id="password-toggle" class="password-toggle-btn" title="Show/Hide Password">
+                            <button type="button" id="password-toggle" class="password-toggle-btn"
+                                title="Show/Hide Password">
                                 <i class="fas fa-eye" id="password-toggle-icon"></i>
                             </button>
                         </div>
@@ -34,7 +37,7 @@
                     <button type="submit" class="btn-primary">Login</button>
                 </form>
                 <div class="error-message" id="login-error" style="display: none;"></div>
-                
+
                 <!-- Back to Homepage link -->
                 <div class="login-footer">
                     <a href="/" class="back-to-home">
@@ -100,10 +103,10 @@
                         <span>MAC Bans</span>
                     </a>
                     -->
-                    
+
                     <!-- Divider -->
                     <div class="sidebar-divider"></div>
-                    
+
                     <!-- Navigation buttons -->
                     <a href="/" class="sidebar-link sidebar-action">
                         <i class="fas fa-external-link-alt"></i>
@@ -210,7 +213,8 @@
                             </div>
                             <div class="form-group">
                                 <label for="post-youtube-url">YouTube URL (optional):</label>
-                                <input type="url" id="post-youtube-url" name="youtube_url" placeholder="https://www.youtube.com/watch?v=...">
+                                <input type="url" id="post-youtube-url" name="youtube_url"
+                                    placeholder="https://www.youtube.com/watch?v=...">
                             </div>
                             <div class="form-group">
                                 <label class="checkbox-label">
@@ -220,7 +224,8 @@
                             </div>
                             <div class="form-actions">
                                 <button type="submit" class="btn-primary" id="submit-post">Create Post</button>
-                                <button type="button" class="btn-secondary" id="cancel-edit" style="display: none;">Cancel</button>
+                                <button type="button" class="btn-secondary" id="cancel-edit"
+                                    style="display: none;">Cancel</button>
                             </div>
                         </form>
                     </div>
@@ -291,7 +296,8 @@
                             </div>
                             <div class="filter-group">
                                 <label for="comment-author-filter">Author:</label>
-                                <input type="text" id="comment-author-filter" class="form-control" placeholder="Filter by author name...">
+                                <input type="text" id="comment-author-filter" class="form-control"
+                                    placeholder="Filter by author name...">
                             </div>
                             <div class="filter-group">
                                 <label for="comment-date-filter">Date Range:</label>
@@ -419,7 +425,8 @@
                             </div>
                             <div class="filter-group">
                                 <label for="log-user-filter">User Email:</label>
-                                <input type="text" id="log-user-filter" class="form-control" placeholder="Filter by user email...">
+                                <input type="text" id="log-user-filter" class="form-control"
+                                    placeholder="Filter by user email...">
                             </div>
                             <button class="btn-primary btn-small" id="apply-log-filters">
                                 <i class="fas fa-filter"></i> Apply Filters
@@ -709,7 +716,7 @@
                     <i class="fas fa-spinner fa-spin"></i>
                     <p>Loading statistics...</p>
                 </div>
-                
+
                 <div class="post-stats-container" id="post-stats-container" style="display: none;">
                     <!-- Overview Stats -->
                     <div class="stats-overview">
@@ -757,12 +764,12 @@
                             <h4>Daily Views (Last 30 Days)</h4>
                             <canvas id="daily-views-chart"></canvas>
                         </div>
-                        
+
                         <div class="chart-container">
                             <h4>Hourly View Distribution</h4>
                             <canvas id="hourly-views-chart"></canvas>
                         </div>
-                        
+
                         <div class="chart-container">
                             <h4>Browser Statistics</h4>
                             <canvas id="browser-stats-chart"></canvas>
@@ -810,9 +817,9 @@
 
     <script src="/js/theme.js"></script>
     <script src="/js/sidebar.js"></script>
-    <script src="/js/auth.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-    <script src="/js/admin.js"></script>
+    <script type="module" src="/js/admin/main.js"></script>
 </body>
+
 </html>
