@@ -18,31 +18,49 @@ export class CommentManager {
     }
 
     renderComments() {
-        const container = document.getElementById('comments-list'); // Assuming a container ID
-        // Note: admin.js didn't show exact container ID in snippet, but likely exists.
-        // Let's assume a table similar to posts.
-        // If there's a specialized container ID in the HTML, we need it. 
-        // Looking at server.js analysis or previous admin.js:
-        // admin.js used `renderComments` but didn't show the DOM logic in snippet fully.
-        // I will assume standard IDs or we might need to fix HTML later.
+        const container = document.getElementById('comments-table-body');
 
-        if (!container) return;
+        if (!container) {
+            console.error('Comments container not found');
+            return;
+        }
+
+        if (this.comments.length === 0) {
+            container.innerHTML = '<tr><td colspan="5" class="text-center">No comments found</td></tr>';
+            return;
+        }
 
         container.innerHTML = this.comments.map(comment => `
-            <div class="comment-item">
-                <div class="comment-header">
-                    <strong>${ui.escapeHtml(comment.author_name)}</strong> on ${ui.escapeHtml(comment.post_title || 'Unknown Post')}
-                    <span class="date">${ui.formatDate(comment.created_at)}</span>
-                </div>
-                <div class="comment-body">${ui.escapeHtml(comment.content)}</div>
-                <div class="comment-actions">
-                    <button class="delete-btn" data-id="${comment.id}">Delete</button>
-                </div>
-            </div>
+            <tr>
+                <td>
+                    <div class="comment-author">${ui.escapeHtml(comment.author_name)}</div>
+                </td>
+                <td>
+                    <div class="comment-content" title="${ui.escapeHtml(comment.content)}">
+                        ${ui.escapeHtml(comment.content).substring(0, 100)}${comment.content.length > 100 ? '...' : ''}
+                    </div>
+                </td>
+                <td>
+                    <a href="/post/${ui.escapeHtml(comment.post_slug)}" target="_blank">
+                        ${ui.escapeHtml(comment.post_title || 'Unknown Post')}
+                    </a>
+                </td>
+                <td>${ui.formatDate(comment.created_at)}</td>
+                <td>
+                    <div class="action-buttons">
+                        <button class="btn-danger btn-sm delete-btn" data-id="${comment.id}" title="Delete Comment">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
+                </td>
+            </tr>
         `).join('');
 
         container.querySelectorAll('.delete-btn').forEach(btn => {
-            btn.addEventListener('click', () => this.deleteComment(btn.dataset.id));
+            btn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                this.deleteComment(btn.dataset.id);
+            });
         });
     }
 

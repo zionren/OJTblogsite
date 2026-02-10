@@ -115,11 +115,24 @@ const getMacBans = async (req, res) => {
 // Activity Logs endpoint for admin
 const getActivityLogs = async (req, res) => {
     try {
-        const { page = 1, limit = 20 } = req.query;
+        const { page = 1, limit = 20, action, entity_type, user_email } = req.query;
         const offset = (page - 1) * limit;
 
-        const logs = await client`SELECT * FROM activity_logs ORDER BY timestamp DESC LIMIT ${limit} OFFSET ${offset}`;
-        const total = await client`SELECT COUNT(*) as count FROM activity_logs`;
+        // Build query conditions
+        let conditions = [];
+        if (action) conditions.push(client`action = ${action}`);
+        if (entity_type) conditions.push(client`entity_type = ${entity_type}`);
+        if (user_email) conditions.push(client`user_email ILIKE ${'%' + user_email + '%'}`);
+
+        let whereClause = client``;
+        if (conditions.length > 0) {
+            whereClause = client`WHERE ${conditions.reduce((acc, curr, i) => i === 0 ? curr : client`${acc} AND ${curr}`, client``)}`;
+        }
+
+        // Combine for full query
+        // Note: postgres.js template literals composition
+        const logs = await client`SELECT * FROM activity_logs ${whereClause} ORDER BY timestamp DESC LIMIT ${limit} OFFSET ${offset}`;
+        const total = await client`SELECT COUNT(*) as count FROM activity_logs ${whereClause}`;
 
         res.json({
             logs,
@@ -129,6 +142,21 @@ const getActivityLogs = async (req, res) => {
         });
     } catch (error) {
         console.error('Get activity logs error:', error);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+};
+
+const getActivityStats = async (req, res) => {
+    try {
+        const totalResult = await client`SELECT COUNT(*) as count FROM activity_logs`;
+        const actionStats = await client`SELECT action, COUNT(*) as count FROM activity_logs GROUP BY action`;
+
+        res.json({
+            totalLogs: parseInt(totalResult[0].count),
+            actionStats: actionStats.map(s => ({ action: s.action, count: parseInt(s.count) }))
+        });
+    } catch (error) {
+        console.error('Get activity stats error:', error);
         res.status(500).json({ error: 'Internal server error' });
     }
 };
@@ -233,6 +261,7 @@ module.exports = {
     getDashboardData,
     trackEvent,
     getActivityLogs,
+    getActivityStats,
     getMacBans,
     getPostStats
 };

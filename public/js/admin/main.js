@@ -4,12 +4,14 @@ import { AuthManager } from './modules/auth.js';
 import { AnalyticsManager } from './modules/analytics.js';
 import { PostManager } from './modules/posts.js';
 import { CommentManager } from './modules/comments.js';
+import { ActivityLogManager } from './modules/activityLogs.js';
 
 class AdminDashboard {
     constructor() {
         this.analyticsManager = null;
         this.postManager = null;
         this.commentManager = null;
+        this.activityLogManager = null;
         this.currentTab = 'analytics';
 
         // Initialize AuthManager, which will call initDashboard when auth is confirmed
@@ -21,6 +23,7 @@ class AdminDashboard {
         this.analyticsManager = new AnalyticsManager();
         this.postManager = new PostManager();
         this.commentManager = new CommentManager();
+        this.activityLogManager = new ActivityLogManager();
 
         this.setupNavigation();
         this.setupLogout();
@@ -106,6 +109,9 @@ class AdminDashboard {
                 break;
             case 'comments':
                 this.commentManager?.loadComments();
+                break;
+            case 'activity-logs':
+                this.activityLogManager?.loadActivityLogs();
                 break;
         }
     }

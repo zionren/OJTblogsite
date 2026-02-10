@@ -1,0 +1,41 @@
+/* Sidebar Glassmorphism */
+.sidebar {
+    background: var(--glass-bg);
+    backdrop-filter: var(--backdrop-blur);
+    -webkit-backdrop-filter: var(--backdrop-blur);
+    border-right: var(--glass-border);
+    box-shadow: var(--glass-shadow);
+    transition: left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.sidebar-header {
+    border-bottom: var(--glass-border);
+    background: rgba(255, 255, 255, 0.05);
+}
+
+/* Pagination Modernization */
+.pagination button {
+    border: none;
+    box-shadow: var(--shadow);
+    border-radius: 50%;
+    /* Circle buttons */
+    width: 40px;
+    height: 40px;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: var(--transition);
+}
+
+.pagination button:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-colored);
+    background-color: var(--secondary-color);
+    color: white;
+}
+
+.pagination button.active {
+    box-shadow: var(--shadow-colored);
+    transform: scale(1.1);
+}

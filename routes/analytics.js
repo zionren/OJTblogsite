@@ -18,6 +18,7 @@ router.get('/post/:postId', authenticateToken, analyticsController.getPostStats)
 // Original server.js view stopped around line 800-1200, but admin.js referenced `mac-bans` and `activity-logs`.
 // I will assume the routes should exist.
 router.get('/activity-logs', authenticateToken, analyticsController.getActivityLogs);
+router.get('/activity-stats', authenticateToken, analyticsController.getActivityStats);
 router.get('/mac-bans', authenticateToken, analyticsController.getMacBans);
 
 module.exports = router;
