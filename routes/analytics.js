@@ -9,6 +9,9 @@ router.post('/track', analyticsController.trackEvent);
 // Admin dashboard
 router.get('/dashboard', authenticateToken, analyticsController.getDashboardData);
 
+// Per-post statistics
+router.get('/post/:postId', authenticateToken, analyticsController.getPostStats);
+
 // Admin Activity Logs (mapped here for convenience as they are analytics-adjacent)
 // Originally implied in server.js but not explicitly shown in partial view? 
 // No, line 227 of admin.js: `this.setupActivityLogsEventListeners();` calls `/api/admin/activity-logs`? 
