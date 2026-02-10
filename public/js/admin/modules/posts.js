@@ -140,8 +140,8 @@ export class PostManager {
             if (youtubeInput) youtubeInput.value = post.youtube_url || '';
             document.getElementById('post-published').checked = post.published;
 
-            document.getElementById('form-title').textContent = 'Edit Post';
-            document.getElementById('submit-post-btn').textContent = 'Update Post';
+            document.getElementById('post-form-title').textContent = 'Edit Post';
+            document.getElementById('submit-post').textContent = 'Update Post';
             document.getElementById('cancel-edit').style.display = 'inline-block';
 
             window.dispatchEvent(new CustomEvent('switch-tab', { detail: { tab: 'create-post' } }));
@@ -153,8 +153,8 @@ export class PostManager {
     cancelEdit() {
         this.editingPostId = null;
         document.getElementById('post-form').reset();
-        document.getElementById('form-title').textContent = 'Create New Post';
-        document.getElementById('submit-post-btn').textContent = 'Create Post';
+        document.getElementById('post-form-title').textContent = 'Create New Post';
+        document.getElementById('submit-post').textContent = 'Create Post';
         document.getElementById('cancel-edit').style.display = 'none';
 
         window.dispatchEvent(new CustomEvent('switch-tab', { detail: { tab: 'posts' } }));
