@@ -1,6 +1,8 @@
 const express = require('express');
 const path = require('path');
 const cors = require('cors');
+const helmet = require('helmet');
+const cookieParser = require('cookie-parser');
 const { drizzle } = require('drizzle-orm/postgres-js');
 const postgres = require('postgres');
 const bcrypt = require('bcrypt');
@@ -48,16 +50,33 @@ const db = drizzle(client);
 
 // Middleware
 app.set('trust proxy', 1); // Trust first proxy for rate limiting
+app.use(helmet({
+    contentSecurityPolicy: {
+        directives: {
+            defaultSrc: ["'self'"],
+            scriptSrc: ["'self'", "'unsafe-inline'", "https://cdn.jsdelivr.net", "https://cdnjs.cloudflare.com"],
+            styleSrc: ["'self'", "'unsafe-inline'", "https://cdnjs.cloudflare.com"],
+            imgSrc: ["'self'", "data:", "https:", "blob:"],
+            connectSrc: ["'self'"],
+            fontSrc: ["'self'", "https://cdnjs.cloudflare.com"],
+            objectSrc: ["'none'"],
+            mediaSrc: ["'self'"],
+            frameSrc: ["'self'", "https://www.youtube.com", "https://youtube.com"],
+        },
+    },
+}));
+app.use(cookieParser());
 app.use(cors({
-    origin: true,
-    credentials: true
+    origin: true, // For development convenience, but credentials are strictly handled
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS']
 }));
 app.use(express.json({ limit: '10mb' }));
 app.use(express.static('public'));
 app.use('/attached_assets', express.static('attached_assets'));
 
 // More lenient rate limiting for production
-const rateLimitConfig = process.env.NODE_ENV === 'production' 
+const rateLimitConfig = process.env.NODE_ENV === 'production'
     ? {
         windowMs: 15 * 60 * 1000, // 15 minutes
         max: 1000, // Higher limit for production
@@ -79,8 +98,8 @@ app.use(rateLimit(rateLimitConfig));
 
 // JWT middleware
 const authenticateToken = (req, res, next) => {
-    const authHeader = req.headers['authorization'];
-    const token = authHeader && authHeader.split(' ')[1];
+    // Check for token in cookies first, then Authorization header (for backward compatibility or API clients)
+    const token = req.cookies.token || (req.headers['authorization'] && req.headers['authorization'].split(' ')[1]);
 
     if (!token) {
         return res.status(401).json({ error: 'Access token required' });
@@ -88,6 +107,8 @@ const authenticateToken = (req, res, next) => {
 
     jwt.verify(token, process.env.JWT_SECRET || 'blog-jwt-secret-key-2025-secure-fallback', (err, user) => {
         if (err) {
+            // If token is invalid/expired, clear the cookie
+            res.clearCookie('token');
             return res.status(403).json({ error: 'Invalid token' });
         }
         req.user = user;
@@ -184,7 +205,7 @@ const initializeDatabase = async () => {
         // Create admin user if it doesn't exist
         const adminEmail = process.env.ADMIN_EMAIL || 'admin@blog.com';
         const adminPassword = process.env.ADMIN_PASSWORD || 'blogadmin2025';
-        
+
         const existingAdmin = await client`SELECT id FROM users WHERE email = ${adminEmail}`;
         if (existingAdmin.length === 0) {
             const hashedPassword = await bcrypt.hash(adminPassword, 10);
@@ -306,22 +327,22 @@ This project proves that vanilla JavaScript is still powerful and relevant in mo
 // Generate unique slug for posts
 async function generateUniqueSlug(title) {
     try {
-        let baseSlug = slugify(title, { 
-            lower: true, 
-            strict: true, 
-            remove: /[*+~.()'"!:@]/g 
+        let baseSlug = slugify(title, {
+            lower: true,
+            strict: true,
+            remove: /[*+~.()'"!:@]/g
         });
-        
+
         let slug = baseSlug;
         let counter = 1;
-        
+
         while (true) {
             const existingPost = await client`SELECT id FROM posts WHERE slug = ${slug}`;
-            
+
             if (existingPost.length === 0) {
                 return slug;
             }
-            
+
             counter++;
             slug = `${baseSlug}-${counter}`;
         }
@@ -336,12 +357,12 @@ async function logActivity(user_id, user_email, action, entity_type, entity_id, 
     try {
         const ip_address = req.ip || req.connection.remoteAddress || 'unknown';
         const user_agent = req.headers['user-agent'] || 'unknown';
-        
+
         await client`
             INSERT INTO activity_logs (user_id, user_email, action, entity_type, entity_id, details, ip_address, user_agent)
             VALUES (${user_id}, ${user_email}, ${action}, ${entity_type}, ${entity_id}, ${JSON.stringify(details)}, ${ip_address}, ${user_agent})
         `;
-        
+
         console.log(`Activity logged: ${action} on ${entity_type} by ${user_email}`);
     } catch (error) {
         console.error('Error logging activity:', error);
@@ -354,14 +375,14 @@ function getUserFromToken(req) {
         // Try Authorization header first (for API calls)
         const authHeader = req.headers['authorization'];
         let token = authHeader && authHeader.split(' ')[1];
-        
+
         // Fallback to cookies if no Authorization header
         if (!token) {
             token = req.cookies?.token;
         }
-        
+
         if (!token) return null;
-        
+
         const decoded = jwt.verify(token, process.env.JWT_SECRET || 'blog-jwt-secret-key-2025-secure-fallback');
         return { id: decoded.userId, email: decoded.email };
     } catch (error) {
@@ -375,7 +396,7 @@ function getUserFromToken(req) {
 app.post('/api/auth/login', async (req, res) => {
     try {
         const { email, password } = req.body;
-        
+
         const user = await client`SELECT * FROM users WHERE email = ${email}`;
         if (user.length === 0) {
             return res.status(401).json({ error: 'Invalid credentials' });
@@ -392,22 +413,40 @@ app.post('/api/auth/login', async (req, res) => {
             { expiresIn: '24h' }
         );
 
+        // Set HttpOnly cookie
+        res.cookie('token', token, {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === 'production', // true in production
+            sameSite: 'strict',
+            maxAge: 24 * 60 * 60 * 1000 // 24 hours
+        });
+
         // Log the login activity
         await logActivity(
-            user[0].id, 
-            user[0].email, 
-            'LOGIN', 
-            'user', 
-            user[0].id, 
-            { role: user[0].role }, 
+            user[0].id,
+            user[0].email,
+            'LOGIN',
+            'user',
+            user[0].id,
+            { role: user[0].role },
             req
         );
 
-        res.json({ token, user: { id: user[0].id, email: user[0].email, role: user[0].role } });
+        res.json({ success: true, user: { id: user[0].id, email: user[0].email, role: user[0].role } });
     } catch (error) {
         console.error('Login error:', error);
         res.status(500).json({ error: 'Internal server error' });
     }
+});
+
+app.post('/api/auth/logout', (req, res) => {
+    res.clearCookie('token');
+    res.json({ success: true, message: 'Logged out successfully' });
+});
+
+// Auth check endpoint
+app.get('/api/auth/check', authenticateToken, (req, res) => {
+    res.json({ user: req.user });
 });
 
 // Posts API
@@ -416,25 +455,25 @@ app.get('/api/posts', async (req, res) => {
         console.log('Posts API called with query:', req.query);
         const { page = 1, limit = 10, published = true } = req.query;
         const offset = (page - 1) * limit;
-        
-        const postsQuery = published === 'true' 
+
+        const postsQuery = published === 'true'
             ? client`SELECT *, (SELECT COUNT(*) FROM comments WHERE post_id = posts.id AND approved = true) as comment_count FROM posts WHERE published = true ORDER BY created_at DESC LIMIT ${limit} OFFSET ${offset}`
             : client`SELECT *, (SELECT COUNT(*) FROM comments WHERE post_id = posts.id AND approved = true) as comment_count FROM posts ORDER BY created_at DESC LIMIT ${limit} OFFSET ${offset}`;
-        
+
         const postsResult = await postsQuery;
-        const totalQuery = published === 'true' 
+        const totalQuery = published === 'true'
             ? client`SELECT COUNT(*) as total FROM posts WHERE published = true`
             : client`SELECT COUNT(*) as total FROM posts`;
-        
+
         const totalResult = await totalQuery;
-        
+
         const response = {
             posts: postsResult,
             total: parseInt(totalResult[0].total),
             page: parseInt(page),
             totalPages: Math.ceil(totalResult[0].total / limit)
         };
-        
+
         console.log('Posts API response:', { postsCount: postsResult.length, total: response.total });
         res.json(response);
     } catch (error) {
@@ -447,7 +486,7 @@ app.get('/api/posts/:slug', async (req, res) => {
     try {
         const { slug } = req.params;
         const post = await client`SELECT * FROM posts WHERE slug = ${slug} AND published = true`;
-        
+
         if (post.length === 0) {
             return res.status(404).json({ error: 'Post not found' });
         }
@@ -471,7 +510,7 @@ app.get('/api/posts/id/:id', authenticateToken, async (req, res) => {
     try {
         const { id } = req.params;
         const post = await client`SELECT * FROM posts WHERE id = ${id}`;
-        
+
         if (post.length === 0) {
             return res.status(404).json({ error: 'Post not found' });
         }
@@ -488,37 +527,37 @@ app.post('/api/posts', authenticateToken, async (req, res) => {
         console.log('POST /api/posts - Request body:', req.body);
         const { title, content, youtube_url, published = true } = req.body;
         const user = getUserFromToken(req);
-        
+
         // Validate required fields
         if (!title || !content) {
             console.log('Validation failed - missing title or content');
             return res.status(400).json({ error: 'Title and content are required' });
         }
-        
+
         console.log('Generating unique slug for title:', title);
         const slug = await generateUniqueSlug(title);
         console.log('Final unique slug:', slug);
-        
+
         console.log('Attempting database insert...');
         const result = await client`INSERT INTO posts (title, content, youtube_url, published, slug) 
                                    VALUES (${title}, ${content}, ${youtube_url}, ${published}, ${slug}) 
                                    RETURNING *`;
-        
+
         console.log('Database insert successful:', result[0]);
-        
+
         // Log the activity
         if (user) {
             await logActivity(
-                user.id, 
-                user.email, 
-                'CREATE', 
-                'post', 
-                result[0].id, 
-                { title: result[0].title, published: result[0].published }, 
+                user.id,
+                user.email,
+                'CREATE',
+                'post',
+                result[0].id,
+                { title: result[0].title, published: result[0].published },
                 req
             );
         }
-        
+
         res.status(201).json(result[0]);
     } catch (error) {
         console.error('Create post error details:', error);
@@ -532,18 +571,18 @@ app.put('/api/posts/:id', authenticateToken, async (req, res) => {
         const { id } = req.params;
         const { title, content, youtube_url, published } = req.body;
         const user = getUserFromToken(req);
-        
+
         // Get the original post for comparison
         const originalPost = await client`SELECT * FROM posts WHERE id = ${id}`;
         if (originalPost.length === 0) {
             return res.status(404).json({ error: 'Post not found' });
         }
-        
+
         // Generate unique slug (excluding current post)
         let baseSlug = slugify(title, { lower: true, strict: true, remove: /[*+~.()'"!:@]/g });
         let slug = baseSlug;
         let counter = 1;
-        
+
         while (true) {
             const existingPost = await client`SELECT id FROM posts WHERE slug = ${slug} AND id != ${id}`;
             if (existingPost.length === 0) {
@@ -558,21 +597,21 @@ app.put('/api/posts/:id', authenticateToken, async (req, res) => {
                                        published = ${published}, slug = ${slug}, updated_at = CURRENT_TIMESTAMP 
                                    WHERE id = ${id} 
                                    RETURNING *`;
-        
+
         // Log the activity
         if (user) {
             const changes = {};
             if (originalPost[0].title !== title) changes.title = { from: originalPost[0].title, to: title };
             if (originalPost[0].published !== published) changes.published = { from: originalPost[0].published, to: published };
             if (originalPost[0].content !== content) changes.content_changed = true;
-            
+
             await logActivity(
-                user.id, 
-                user.email, 
-                'UPDATE', 
-                'post', 
-                parseInt(id), 
-                changes, 
+                user.id,
+                user.email,
+                'UPDATE',
+                'post',
+                parseInt(id),
+                changes,
                 req
             );
         }
@@ -588,28 +627,28 @@ app.delete('/api/posts/:id', authenticateToken, async (req, res) => {
     try {
         const { id } = req.params;
         const user = getUserFromToken(req);
-        
+
         // Get post details before deletion for logging
         const postToDelete = await client`SELECT * FROM posts WHERE id = ${id}`;
         if (postToDelete.length === 0) {
             return res.status(404).json({ error: 'Post not found' });
         }
-        
+
         // Delete related comments and analytics first
         await client`DELETE FROM comments WHERE post_id = ${id}`;
         await client`DELETE FROM analytics WHERE post_id = ${id}`;
-        
+
         const result = await client`DELETE FROM posts WHERE id = ${id} RETURNING *`;
-        
+
         // Log the activity
         if (user) {
             await logActivity(
-                user.id, 
-                user.email, 
-                'DELETE', 
-                'post', 
-                parseInt(id), 
-                { title: postToDelete[0].title, slug: postToDelete[0].slug }, 
+                user.id,
+                user.email,
+                'DELETE',
+                'post',
+                parseInt(id),
+                { title: postToDelete[0].title, slug: postToDelete[0].slug },
                 req
             );
         }
@@ -637,11 +676,11 @@ app.post('/api/posts/:id/comments', async (req, res) => {
     try {
         const { id } = req.params;
         const { author_name, content } = req.body;
-        
+
         const result = await client`INSERT INTO comments (post_id, author_name, content) 
                                    VALUES (${id}, ${author_name}, ${content}) 
                                    RETURNING *`;
-        
+
         res.status(201).json(result[0]);
     } catch (error) {
         console.error('Create comment error:', error);
@@ -653,7 +692,7 @@ app.post('/api/posts/:id/comments', async (req, res) => {
 app.get('/api/admin/comments', authenticateToken, async (req, res) => {
     try {
         const { postId } = req.query;
-        
+
         let query;
         if (postId) {
             query = client`
@@ -671,7 +710,7 @@ app.get('/api/admin/comments', authenticateToken, async (req, res) => {
                 ORDER BY c.created_at DESC
             `;
         }
-        
+
         const comments = await query;
         res.json(comments);
     } catch (error) {
@@ -684,28 +723,28 @@ app.delete('/api/admin/comments/:id', authenticateToken, async (req, res) => {
     try {
         const { id } = req.params;
         const user = getUserFromToken(req);
-        
+
         // Get comment details before deletion for logging
         const commentToDelete = await client`SELECT * FROM comments WHERE id = ${id}`;
         if (commentToDelete.length === 0) {
             return res.status(404).json({ error: 'Comment not found' });
         }
-        
+
         const result = await client`DELETE FROM comments WHERE id = ${id} RETURNING *`;
-        
+
         // Log the activity
         if (user) {
             await logActivity(
-                user.id, 
-                user.email, 
-                'DELETE', 
-                'comment', 
-                parseInt(id), 
-                { 
-                    author: commentToDelete[0].author_name, 
+                user.id,
+                user.email,
+                'DELETE',
+                'comment',
+                parseInt(id),
+                {
+                    author: commentToDelete[0].author_name,
                     post_id: commentToDelete[0].post_id,
                     content_preview: commentToDelete[0].content.substring(0, 50) + '...'
-                }, 
+                },
                 req
             );
         }
@@ -722,18 +761,23 @@ app.get('/api/analytics/dashboard', authenticateToken, async (req, res) => {
     try {
         console.log('Analytics API called by user:', req.user?.email);
         const { startDate, endDate } = req.query;
-        
+
         let dateFilter = '';
         let params = [];
-        
+
         if (startDate && endDate) {
             dateFilter = 'WHERE timestamp >= $1 AND timestamp <= $2';
             params = [startDate, endDate];
         }
 
         // Total visits
-        const totalVisits = await client`SELECT COUNT(*) as count FROM analytics WHERE event_type = 'post_view' ${dateFilter ? client.unsafe(dateFilter) : client``}`;
-        
+        let totalVisits;
+        if (startDate && endDate) {
+            totalVisits = await client`SELECT COUNT(*) as count FROM analytics WHERE event_type = 'post_view' AND timestamp >= ${startDate} AND timestamp <= ${endDate}`;
+        } else {
+            totalVisits = await client`SELECT COUNT(*) as count FROM analytics WHERE event_type = 'post_view'`;
+        }
+
         // Most viewed posts
         const mostViewed = await client`
             SELECT p.title, p.views, p.id 
@@ -741,7 +785,7 @@ app.get('/api/analytics/dashboard', authenticateToken, async (req, res) => {
             ORDER BY p.views DESC 
             LIMIT 10
         `;
-        
+
         // Most watched videos (based on video play events)
         const mostWatched = await client`
             SELECT p.title, COUNT(a.id) as play_count, p.id
@@ -752,7 +796,7 @@ app.get('/api/analytics/dashboard', authenticateToken, async (req, res) => {
             ORDER BY play_count DESC
             LIMIT 10
         `;
-        
+
         // Daily analytics for the last 30 days with zero-fill for missing days
         const dailyAnalytics = await client`
             WITH date_series AS (
@@ -771,7 +815,7 @@ app.get('/api/analytics/dashboard', authenticateToken, async (req, res) => {
             GROUP BY ds.date
             ORDER BY ds.date ASC
         `;
-        
+
         // Average time spent (mock data since we don't track this yet)
         const avgTimeSpent = await client`
             SELECT AVG(EXTRACT(EPOCH FROM (
@@ -791,12 +835,12 @@ app.get('/api/analytics/dashboard', authenticateToken, async (req, res) => {
             dailyAnalytics,
             avgTimeSpent: Math.round(avgTimeSpent[0].avg_seconds || 0)
         };
-        
-        console.log('Analytics API response:', { 
-            totalVisits: response.totalVisits, 
-            mostViewedCount: response.mostViewed.length 
+
+        console.log('Analytics API response:', {
+            totalVisits: response.totalVisits,
+            mostViewedCount: response.mostViewed.length
         });
-        
+
         res.json(response);
     } catch (error) {
         console.error('Analytics dashboard error:', error);
@@ -808,7 +852,7 @@ app.get('/api/analytics/dashboard', authenticateToken, async (req, res) => {
 app.get('/api/analytics/post/:id', authenticateToken, async (req, res) => {
     try {
         const postId = parseInt(req.params.id);
-        
+
         if (isNaN(postId)) {
             return res.status(400).json({ error: 'Invalid post ID' });
         }
@@ -919,22 +963,22 @@ app.get('/api/analytics/post/:id', authenticateToken, async (req, res) => {
 app.post('/api/analytics/track', async (req, res) => {
     try {
         const { eventType, postId, sessionId, additionalData } = req.body;
-        
+
         // Validate required field
         if (!eventType) {
             return res.status(400).json({ error: 'eventType is required' });
         }
-        
+
         // Handle null/undefined values properly
         const safePostId = postId || null;
         const safeSessionId = sessionId || 'anonymous';
         const safeUserAgent = req.headers['user-agent'] || null;
         const safeIpAddress = req.ip || null;
         const safeAdditionalData = additionalData || {};
-        
+
         await client`INSERT INTO analytics (event_type, post_id, session_id, user_agent, ip_address, additional_data) 
                      VALUES (${eventType}, ${safePostId}, ${safeSessionId}, ${safeUserAgent}, ${safeIpAddress}, ${JSON.stringify(safeAdditionalData)})`;
-        
+
         res.json({ success: true });
     } catch (error) {
         console.error('Track analytics error:', error);
@@ -947,32 +991,32 @@ app.get('/api/admin/activity-logs', authenticateToken, async (req, res) => {
     try {
         const { page = 1, limit = 50, action, entity_type, user_email } = req.query;
         const offset = (page - 1) * limit;
-        
+
         let whereConditions = [];
         let params = [];
-        
+
         if (action) {
             whereConditions.push(`action = '${action}'`);
         }
-        
+
         if (entity_type) {
             whereConditions.push(`entity_type = '${entity_type}'`);
         }
-        
+
         if (user_email) {
             whereConditions.push(`user_email ILIKE '%${user_email}%'`);
         }
-        
+
         const whereClause = whereConditions.length > 0 ? 'WHERE ' + whereConditions.join(' AND ') : '';
-        
+
         let logsQuery = client`
             SELECT * FROM activity_logs 
             ORDER BY timestamp DESC 
             LIMIT ${limit} OFFSET ${offset}
         `;
-        
+
         let countQuery = client`SELECT COUNT(*) as count FROM activity_logs`;
-        
+
         if (whereConditions.length > 0) {
             const conditions = whereConditions.join(' AND ');
             logsQuery = client.unsafe(`
@@ -981,16 +1025,16 @@ app.get('/api/admin/activity-logs', authenticateToken, async (req, res) => {
                 ORDER BY timestamp DESC 
                 LIMIT ${limit} OFFSET ${offset}
             `);
-            
+
             countQuery = client.unsafe(`
                 SELECT COUNT(*) as count FROM activity_logs 
                 WHERE ${conditions}
             `);
         }
-        
+
         const logs = await logsQuery;
         const totalCount = await countQuery;
-        
+
         res.json({
             logs,
             pagination: {
@@ -1010,21 +1054,21 @@ app.get('/api/admin/activity-stats', authenticateToken, async (req, res) => {
     try {
         // Get activity statistics
         const totalLogs = await client`SELECT COUNT(*) as count FROM activity_logs`;
-        
+
         const actionStats = await client`
             SELECT action, COUNT(*) as count 
             FROM activity_logs 
             GROUP BY action 
             ORDER BY count DESC
         `;
-        
+
         const entityStats = await client`
             SELECT entity_type, COUNT(*) as count 
             FROM activity_logs 
             GROUP BY entity_type 
             ORDER BY count DESC
         `;
-        
+
         const recentActivity = await client`
             SELECT DATE(timestamp) as date, COUNT(*) as count 
             FROM activity_logs 
@@ -1033,7 +1077,7 @@ app.get('/api/admin/activity-stats', authenticateToken, async (req, res) => {
             ORDER BY date DESC
             LIMIT 30
         `;
-        
+
         const topUsers = await client`
             SELECT user_email, COUNT(*) as count 
             FROM activity_logs 
@@ -1042,7 +1086,7 @@ app.get('/api/admin/activity-stats', authenticateToken, async (req, res) => {
             ORDER BY count DESC
             LIMIT 10
         `;
-        
+
         res.json({
             totalLogs: parseInt(totalLogs[0].count),
             actionStats,
@@ -1062,20 +1106,20 @@ app.get('/api/admin/mac-bans', authenticateToken, async (req, res) => {
         const page = parseInt(req.query.page) || 1;
         const limit = parseInt(req.query.limit) || 50;
         const offset = (page - 1) * limit;
-        
+
         const { status, search } = req.query;
-        
+
         // First, let's check what columns exist and get a simple count
         const totalResult = await client`SELECT COUNT(*) as total FROM mac_bans`;
         const totalBans = parseInt(totalResult[0].total);
-        
+
         // Simple query without filtering for now to test basic functionality
         const bans = await client`
             SELECT * FROM mac_bans 
             ORDER BY id DESC 
             LIMIT ${limit} OFFSET ${offset}
         `;
-        
+
         // Add missing fields for frontend compatibility
         const formattedBans = bans.map(ban => ({
             ...ban,
@@ -1083,9 +1127,9 @@ app.get('/api/admin/mac-bans', authenticateToken, async (req, res) => {
             banned_by: 'System',
             created_at: ban.created_at || new Date().toISOString()
         }));
-        
+
         const totalPages = Math.ceil(totalBans / limit);
-        
+
         res.json({
             bans: formattedBans,
             pagination: {
@@ -1107,7 +1151,7 @@ app.get('/api/admin/mac-bans/stats', authenticateToken, async (req, res) => {
         // Just get basic counts for now
         const totalResult = await client`SELECT COUNT(*) as count FROM mac_bans`;
         const totalBans = parseInt(totalResult[0].count);
-        
+
         res.json({
             totalBans,
             activeBans: totalBans, // Assume all are active for now
@@ -1124,47 +1168,47 @@ app.post('/api/admin/mac-bans', authenticateToken, async (req, res) => {
     try {
         const { mac_address, reason } = req.body;
         const user = getUserFromToken(req);
-        
+
         if (!mac_address) {
             return res.status(400).json({ error: 'MAC address is required' });
         }
-        
+
         // Validate MAC address format
         const macRegex = /^([0-9A-Fa-f]{2}[:-]){5}([0-9A-Fa-f]{2})$/;
         if (!macRegex.test(mac_address)) {
             return res.status(400).json({ error: 'Invalid MAC address format' });
         }
-        
+
         // Check if MAC address is already banned
         const existing = await client`
             SELECT id FROM mac_bans 
             WHERE mac_address = ${mac_address}
         `;
-        
+
         if (existing.length > 0) {
             return res.status(400).json({ error: 'MAC address is already banned' });
         }
-        
+
         // Insert new ban with just the required fields
         const result = await client`
             INSERT INTO mac_bans (mac_address, reason) 
             VALUES (${mac_address}, ${reason || null}) 
             RETURNING *
         `;
-        
+
         // Log the activity
         if (user) {
             await logActivity(
-                user.id, 
-                user.email, 
-                'CREATE', 
-                'mac_ban', 
-                result[0].id, 
-                { mac_address, reason }, 
+                user.id,
+                user.email,
+                'CREATE',
+                'mac_ban',
+                result[0].id,
+                { mac_address, reason },
                 req
             );
         }
-        
+
         res.status(201).json({
             id: result[0].id,
             mac_address: result[0].mac_address,
@@ -1183,29 +1227,29 @@ app.delete('/api/admin/mac-bans/:id', authenticateToken, async (req, res) => {
     try {
         const banId = req.params.id;
         const user = getUserFromToken(req);
-        
+
         // Check if ban exists
         const ban = await client`SELECT * FROM mac_bans WHERE id = ${banId}`;
         if (ban.length === 0) {
             return res.status(404).json({ error: 'MAC ban not found' });
         }
-        
+
         // Delete the ban
         await client`DELETE FROM mac_bans WHERE id = ${banId}`;
-        
+
         // Log the activity
         if (user) {
             await logActivity(
-                user.id, 
-                user.email, 
-                'DELETE', 
-                'mac_ban', 
-                parseInt(banId), 
-                { mac_address: ban[0].mac_address }, 
+                user.id,
+                user.email,
+                'DELETE',
+                'mac_ban',
+                parseInt(banId),
+                { mac_address: ban[0].mac_address },
                 req
             );
         }
-        
+
         res.json({ message: 'MAC ban removed successfully' });
     } catch (error) {
         console.error('Error removing MAC ban:', error);

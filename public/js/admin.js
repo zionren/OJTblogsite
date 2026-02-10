@@ -1,65 +1,57 @@
 // Admin dashboard functionality
 class AdminDashboard {
     constructor() {
-        this.token = localStorage.getItem('admin_token');
         this.currentTab = 'analytics';
         this.editingPostId = null;
         this.charts = {};
-        
+
         // Cache for data
         this.cachedAnalytics = null;
         this.cachedPosts = null;
         this.cachedComments = null;
         this.deletingCommentId = null;
-        
+
         // Current post stats for PDF export
         this.currentPostStats = null;
         this.currentPostTitle = null;
-        
+
         // Activity logs pagination
         this.currentLogsPage = 1;
         this.totalLogsPages = 1;
-        
+
         // MAC address banning
         this.cachedMacBans = null;
         this.currentMacBansPage = 1;
         this.totalMacBansPages = 1;
         this.deletingMacBanId = null;
-        
+
         console.log('AdminDashboard constructor - token:', this.token ? 'present' : 'missing');
         console.log('AdminDashboard constructor - initial cache state:', {
             analytics: this.cachedAnalytics,
             posts: this.cachedPosts
         });
-        
+
         this.init();
     }
 
     init() {
         this.setupEventListeners();
-        
-        // Only load data if we have a token
-        if (this.token) {
-            // Add a small delay to ensure the page is fully loaded
-            // Only load the current tab's data initially
-            setTimeout(() => {
-                if (this.currentTab === 'analytics') {
-                    this.loadAnalytics();
-                } else if (this.currentTab === 'posts') {
-                    this.loadPosts();
-                }
-                // Don't preload all data - let user switch tabs to load them
-            }, 100);
-        } else {
-            console.warn('No admin token found, skipping data load');
-        }
+
+        // Add a small delay to ensure the page is fully loaded
+        setTimeout(() => {
+            if (this.currentTab === 'analytics') {
+                this.loadAnalytics();
+            } else if (this.currentTab === 'posts') {
+                this.loadPosts();
+            }
+        }, 100);
     }
 
     setupEventListeners() {
         // Tab switching - only for elements with data-tab attribute
         const tabButtons = document.querySelectorAll('.tab-btn[data-tab]');
         console.log('Setting up event listeners for', tabButtons.length, 'tab buttons');
-        
+
         tabButtons.forEach(btn => {
             console.log('Adding event listener to button with data-tab:', btn.dataset.tab);
             btn.addEventListener('click', (e) => {
@@ -69,14 +61,14 @@ class AdminDashboard {
                 console.log(`Tab clicked: ${tabName}`);
                 if (tabName) {
                     this.switchTab(tabName);
-                } 
+                }
                 else {
                     console.warn('No tabName found on clicked element');
                 }
             });
         });
 
-        
+
         document.getElementById('logout-btn').addEventListener('click', () => {
             try {
                 this.showLogoutModal();
@@ -92,7 +84,7 @@ class AdminDashboard {
         document.getElementById('logout-cancel').addEventListener('click', () => {
             try {
                 this.hideLogoutModal();
-            
+
             }
             catch (error) {
                 console.error("failed to hide loghouyt modal.", error);
@@ -119,7 +111,7 @@ class AdminDashboard {
             catch (error) {
                 this.showError('Close modal failed to materuialize.');
             }
-            
+
         });
 
         // Close modal with Escape key
@@ -271,7 +263,7 @@ class AdminDashboard {
             document.querySelectorAll('.tab-btn').forEach(btn => {
                 btn.classList.remove('active');
             });
-            
+
             const targetTab = document.querySelector(`[data-tab="${tabName}"]`);
             if (targetTab) {
                 targetTab.classList.add('active');
@@ -284,7 +276,7 @@ class AdminDashboard {
             document.querySelectorAll('.tab-content').forEach(content => {
                 content.classList.remove('active');
             });
-            
+
             const targetContent = document.getElementById(`${tabName}-tab`);
             if (targetContent) {
                 targetContent.classList.add('active');
@@ -296,13 +288,13 @@ class AdminDashboard {
             this.currentTab = tabName;
             console.log('Current tab set to:', this.currentTab);
 
-            // Load tab-specific data only if we have a valid token
-            if (this.token && this.isTokenValid()) {
+            // Load tab-specific data
+            if (true) {
                 if (tabName == 'analytics') {
                     if (this.cachedAnalytics) {
                         console.log('Using cached analytics data', this.cachedAnalytics);
                         this.renderAnalytics(this.cachedAnalytics);
-                    } 
+                    }
                     else {
                         console.log('Loading analytics for the first time - no cache found');
                         this.loadAnalytics();
@@ -312,39 +304,37 @@ class AdminDashboard {
                     if (this.cachedPosts) {
                         console.log('Using cached posts data', this.cachedPosts);
                         this.renderPosts(this.cachedPosts);
-                    } 
+                    }
                     else {
                         console.log('Loading posts for the first time - no cache found');
                         this.loadPosts();
                     }
-                } 
+                }
                 else if (tabName == 'comments') {
                     if (this.cachedComments) {
                         console.log('Using cached comments data', this.cachedComments);
                         this.renderComments(this.cachedComments);
                         this.renderCommentStats(this.cachedComments);
-                    } 
+                    }
                     else {
                         console.log('Loading comments for the first time - no cache found');
                         this.showCommentsLoading();
                         this.loadComments();
                     }
-                } 
+                }
                 else if (tabName == 'activity-logs') {
                     console.log('Loading activity logs tab');
                     this.loadActivityLogs(1);
-                } 
+                }
                 else if (tabName == 'mac-bans') {
                     console.log('Loading MAC address bans tab');
                     this.loadMacBans(1);
-                } 
+                }
                 else {
                     console.log(`No data loading needed for ${tabName} tab`);
                 }
-            } 
-            else {
-                console.log('No token or invalid token, skipping data load');
             }
+
         } catch (error) {
             console.error('Error in switchTab:', error);
             // Don't let errors break the entire dashboard
@@ -358,19 +348,7 @@ class AdminDashboard {
         return div.innerHTML;
     }
 
-    // Token validation method
-    isTokenValid() {
-        if (!this.token) return false;
-        
-        try {
-            const payload = JSON.parse(atob(this.token.split('.')[1]));
-            const now = Math.floor(Date.now() / 1000);
-            return payload.exp > now;
-        } catch (error) {
-            console.error('Token validation error:', error);
-            return false;
-        }
-    }
+
 
     // Chart resize method
     resizeCharts() {
@@ -387,22 +365,12 @@ class AdminDashboard {
 
     // Analytics loading method
     async loadAnalytics() {
-        if (!this.token) {
-            console.warn('No token available for analytics');
-            return;
-        }
 
-        if (!this.isTokenValid()) {
-            console.warn('Token is invalid, redirecting to login');
-            localStorage.removeItem('admin_token');
-            window.location.reload();
-            return;
-        }
 
         try {
             const startDate = document.getElementById('start-date')?.value || '';
             const endDate = document.getElementById('end-date')?.value || '';
-            
+
             let url = '/api/analytics/dashboard';
             if (startDate && endDate) {
                 url += `?startDate=${startDate}&endDate=${endDate}`;
@@ -415,12 +383,16 @@ class AdminDashboard {
             });
 
             if (!response.ok) {
+                if (response.status === 401) {
+                    window.location.reload();
+                    return;
+                }
                 throw new Error('Failed to fetch analytics');
             }
 
             const data = await response.json();
             console.log('Analytics loaded:', data);
-            
+
             this.cachedAnalytics = data;
             this.renderAnalytics(data);
 
@@ -444,7 +416,7 @@ class AdminDashboard {
 
     renderPostsVsVideosChart(mostViewed, mostWatched) {
         const ctx = document.getElementById('posts-vs-videos-chart').getContext('2d');
-        
+
         // Destroy existing chart if it exists
         if (this.charts.postsVsVideos) {
             this.charts.postsVsVideos.destroy();
@@ -530,27 +502,27 @@ class AdminDashboard {
 
     renderDailyVisitsChart(dailyAnalytics) {
         const ctx = document.getElementById('daily-visits-chart').getContext('2d');
-        
+
         // Destroy existing chart if it exists
         if (this.charts.dailyVisits) {
             this.charts.dailyVisits.destroy();
         }
 
         console.log('Daily analytics data:', dailyAnalytics);
-        
+
         // Better date formatting and ensure we have data
         const labels = dailyAnalytics.map(item => {
             const date = new Date(item.date);
-            return date.toLocaleDateString('en-US', { 
-                month: 'short', 
-                day: 'numeric' 
+            return date.toLocaleDateString('en-US', {
+                month: 'short',
+                day: 'numeric'
             });
         });
         const visits = dailyAnalytics.map(item => parseInt(item.visits) || 0);
-        
+
         console.log('Chart labels:', labels);
         console.log('Chart visits:', visits);
-        
+
         // If no data, show at least a week with some placeholder data
         if (visits.length === 0 || visits.every(v => v === 0)) {
             const today = new Date();
@@ -558,13 +530,13 @@ class AdminDashboard {
                 for (let i = 6; i >= 0; i--) {
                     const date = new Date(today);
                     date.setDate(date.getDate() - i);
-                    labels.push(date.toLocaleDateString('en-US', { 
-                        month: 'short', 
-                        day: 'numeric' 
+                    labels.push(date.toLocaleDateString('en-US', {
+                        month: 'short',
+                        day: 'numeric'
                     }));
                     visits.push(i === 0 ? 1 : 0); // At least one visit today for demo
                 }
-            } 
+            }
             catch (error) {
                 console.error('Error generating placeholder daily visits data:', error);
             }
@@ -647,30 +619,12 @@ class AdminDashboard {
     }
 
     async loadPosts() {
-        if (!this.token) {
-            console.warn('No token available for posts');
-            return;
-        }
-
-        // Double-check token validity before making API calls
-        if (!this.isTokenValid()) {
-            console.warn('Token is invalid, redirecting to login');
-            localStorage.removeItem('admin_token');
-            window.location.reload();
-            return;
-        }
-
         try {
-            const response = await fetch('/api/posts?published=false&limit=1000', {
-                headers: {
-                    'Authorization': `Bearer ${this.token}`
-                }
-            });
+            const response = await fetch('/api/posts?published=false&limit=1000');
 
             if (!response.ok) {
                 if (response.status === 401 || response.status === 403) {
                     console.error('Authentication failed, redirecting to login');
-                    localStorage.removeItem('admin_token');
                     window.location.reload();
                     return;
                 }
@@ -678,14 +632,14 @@ class AdminDashboard {
             }
 
             const data = await response.json();
-            
+
             // Cache the data
             this.cachedPosts = data.posts;
             console.log('Posts data cached:', this.cachedPosts);
-            
+
             this.renderPosts(data.posts);
 
-        } 
+        }
         catch (error) {
             console.error('Error loading posts:', error);
             this.showError('Failed to load posts');
@@ -707,7 +661,7 @@ class AdminDashboard {
 
     renderPosts(posts) {
         const tableBody = document.getElementById('posts-table-body');
-        
+
         if (posts.length === 0) {
             tableBody.innerHTML = '<tr><td colspan="5" style="text-align: center;">No posts found</td></tr>';
             return;
@@ -742,49 +696,33 @@ class AdminDashboard {
     validatePostForm() {
         const title = document.getElementById('post-title').value.trim();
         const content = document.getElementById('post-content').value.trim();
-        
-        try {
-            if (!title) {
-            throw new Error('Post title is required');
-            }
-        } 
-        catch (error) {
-            this.showNotificationModal(error.message, 'error');
+        const youtubeUrl = document.getElementById('post-youtube-url')?.value.trim();
+
+        if (!title) {
+            this.showError('Post title is required');
             return false;
         }
 
-        try {
-            if (!content) {
-            throw new Error('Post content is required');
-            }
-        } 
-        catch (error) {
-            this.showNotificationModal(error.message, 'error');
+        if (!content) {
+            this.showError('Post content is required');
             return false;
         }
 
-        try {
-            const youtubeUrl = document.getElementById('post-youtube-url').value.trim();
-            if (youtubeUrl && !this.isValidYouTubeUrl(youtubeUrl)) {
-            throw new Error('Please enter a valid YouTube URL');
-            }
-        } 
-        catch (error) {
-            this.showNotificationModal(error.message, 'error');
+        if (youtubeUrl && !this.isValidYouTubeUrl(youtubeUrl)) {
+            this.showError('Please enter a valid YouTube URL');
             return false;
         }
-        // else clause to ensure we don't return false if everything is valid
-        console.log('Post form validation passed'); // debugging purposes only
+
         return true;
     }
-    
+
     isValidYouTubeUrl(url) {
         try {
             const youtubeRegex = /^(https?:\/\/)?(www\.)?(youtube\.com|youtu\.be)\/.+$/;
             return youtubeRegex.test(url);
         }
         catch (error) {
-            console.error ("Didn't catch the url:", url, error);
+            console.error("Didn't catch the url:", url, error);
             return false;
         }
     }
@@ -794,7 +732,7 @@ class AdminDashboard {
         if (!this.validatePostForm()) {
             return;
         }
-        
+
         try {
             const formData = new FormData(document.getElementById('post-form'));
             const postData = {
@@ -811,8 +749,7 @@ class AdminDashboard {
             const response = await fetch(url, {
                 method,
                 headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${this.token}`
+                    'Content-Type': 'application/json'
                 },
                 body: JSON.stringify(postData)
             });
@@ -823,12 +760,12 @@ class AdminDashboard {
 
             this.showSuccess(isEditing ? 'Post updated successfully' : 'Post created successfully');
             this.resetPostForm();
-            
+
             // Clear cache since data has changed
             console.log('Clearing cache after post save');
             this.cachedPosts = null;
             this.cachedAnalytics = null; // Analytics might also be affected
-            
+
             this.loadPosts();
 
             // If we were editing a post, switch back to the posts tab
@@ -836,7 +773,7 @@ class AdminDashboard {
                 this.switchTab('posts');
             }
 
-        } 
+        }
         catch (error) {
             console.error('Error saving post:', error);
             this.showError('Failed to save post');
@@ -845,34 +782,30 @@ class AdminDashboard {
 
     async editPost(postId) {
         try {
-            const response = await fetch(`/api/posts/id/${postId}`, {
-                headers: {
-                    'Authorization': `Bearer ${this.token}`
-                }
-            });
+            const response = await fetch(`/api/posts/id/${postId}`);
 
             if (!response.ok) {
                 throw new Error('Failed to load post');
             }
 
             const post = await response.json();
-            
+
             // Switch to create post tab
             this.switchTab('create-post');
-            
+
             // Fill form with post data
             document.getElementById('post-title').value = post.title;
             document.getElementById('post-content').value = post.content;
             document.getElementById('post-youtube-url').value = post.youtube_url || '';
             document.getElementById('post-published').checked = post.published;
-            
+
             // Update form state
             this.editingPostId = postId;
             document.getElementById('post-form-title').textContent = 'Edit Post';
             document.getElementById('submit-post').textContent = 'Update Post';
             document.getElementById('cancel-edit').style.display = 'block';
 
-        } 
+        }
         catch (error) {
             console.error('Error loading post for edit:', error);
             this.showError('Failed to load post for editing');
@@ -909,10 +842,7 @@ class AdminDashboard {
 
         try {
             const response = await fetch(`/api/posts/${this.postToDelete}`, {
-                method: 'DELETE',
-                headers: {
-                    'Authorization': `Bearer ${this.token}`
-                }
+                method: 'DELETE'
             });
 
             if (!response.ok) {
@@ -921,15 +851,15 @@ class AdminDashboard {
 
             this.hideDeleteModal();
             this.showSuccess('Post deleted successfully');
-            
+
             // Clear cache since data has changed
             console.log('Clearing cache after post delete');
             this.cachedPosts = null;
             this.cachedAnalytics = null; // Analytics might also be affected
-            
+
             this.loadPosts();
 
-        } 
+        }
         catch (error) {
             console.error('Error deleting post:', error);
             this.hideDeleteModal();
@@ -952,8 +882,11 @@ class AdminDashboard {
     }
 
     logout() {
-        localStorage.removeItem('admin_token');
-        window.location.reload();
+        if (window.authManager) {
+            window.authManager.logout();
+        } else {
+            window.location.reload();
+        }
     }
 
     showLogoutModal() {
@@ -977,29 +910,22 @@ class AdminDashboard {
 
     // Comment Moderation Methods
     async loadComments() {
-        if (!this.token || !this.isTokenValid()) {
-            console.warn('No valid token for comments');
-            return;
-        }
+
 
         try {
             const filters = this.getCommentFilters();
             let url = '/api/admin/comments';
-            
+
             const queryParams = new URLSearchParams();
             if (filters.postId) queryParams.append('postId', filters.postId);
             if (filters.author) queryParams.append('author', filters.author);
             if (filters.dateRange) queryParams.append('dateRange', filters.dateRange);
-            
+
             if (queryParams.toString()) {
                 url += `?${queryParams.toString()}`;
             }
 
-            const response = await fetch(url, {
-                headers: {
-                    'Authorization': `Bearer ${this.token}`
-                }
-            });
+            const response = await fetch(url);
 
             if (!response.ok) {
                 throw new Error('Failed to fetch comments');
@@ -1007,7 +933,7 @@ class AdminDashboard {
 
             const comments = await response.json();
             console.log('Comments loaded:', comments);
-            
+
             this.cachedComments = comments;
             this.renderComments(comments);
             this.renderCommentStats(comments);
@@ -1023,12 +949,12 @@ class AdminDashboard {
         const postFilter = document.getElementById('comment-post-filter')?.value || '';
         const authorFilter = document.getElementById('comment-author-filter')?.value || '';
         const dateFilter = document.getElementById('comment-date-filter')?.value || '';
-        
+
         const filters = {};
         if (postFilter) filters.postId = postFilter;
         if (authorFilter) filters.author = authorFilter;
         if (dateFilter) filters.dateRange = dateFilter;
-        
+
         return filters;
     }
 
@@ -1041,7 +967,7 @@ class AdminDashboard {
     renderCommentStats(comments) {
         // Calculate stats
         const totalComments = comments.length;
-        
+
         // Today's comments
         const today = new Date();
         today.setHours(0, 0, 0, 0);
@@ -1050,17 +976,17 @@ class AdminDashboard {
             commentDate.setHours(0, 0, 0, 0);
             return commentDate.getTime() === today.getTime();
         }).length;
-        
+
         // Last 7 days comments
         const sevenDaysAgo = new Date();
         sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
         const recentComments = comments.filter(comment => {
             return new Date(comment.created_at) >= sevenDaysAgo;
         }).length;
-        
+
         // Unique commenters
         const uniqueAuthors = new Set(comments.map(comment => comment.author_name.toLowerCase())).size;
-        
+
         // Update stat cards
         document.getElementById('total-comments-count').textContent = totalComments;
         document.getElementById('today-comments-count').textContent = todayComments;
@@ -1070,11 +996,12 @@ class AdminDashboard {
 
     async loadPostsForFilter() {
         try {
-            const response = await fetch('/api/posts?published=false&limit=1000', {
-                headers: {
-                    'Authorization': `Bearer ${this.token}`
-                }
-            });
+            const response = await fetch('/api/posts?published=false&limit=1000');
+
+            if (response.status === 401) {
+                window.location.reload();
+                return;
+            }
 
             if (response.ok) {
                 const data = await response.json();
@@ -1099,7 +1026,7 @@ class AdminDashboard {
         const tbody = document.getElementById('comments-table-body');
         const tableContainer = document.querySelector('.logs-table-container');
         const logsContainer = document.querySelector('.logs-container');
-        
+
         if (!tbody || !tableContainer || !logsContainer) return;
 
         // Remove any existing empty state
@@ -1147,7 +1074,7 @@ class AdminDashboard {
 
     deleteComment(commentId, authorName, contentPreview) {
         this.deletingCommentId = commentId;
-        
+
         const commentPreviewDiv = document.getElementById('comment-preview');
         if (commentPreviewDiv) {
             commentPreviewDiv.innerHTML = `
@@ -1157,7 +1084,7 @@ class AdminDashboard {
                 </div>
             `;
         }
-        
+
         this.showCommentDeleteModal();
     }
 
@@ -1183,10 +1110,7 @@ class AdminDashboard {
 
         try {
             const response = await fetch(`/api/admin/comments/${this.deletingCommentId}`, {
-                method: 'DELETE',
-                headers: {
-                    'Authorization': `Bearer ${this.token}`
-                }
+                method: 'DELETE'
             });
 
             if (!response.ok) {
@@ -1195,7 +1119,7 @@ class AdminDashboard {
 
             this.hideCommentDeleteModal();
             this.showSuccess('Comment deleted successfully');
-            
+
             this.cachedComments = null;
             this.loadComments();
 
@@ -1209,10 +1133,10 @@ class AdminDashboard {
     // MAC Address Banning Methods
     async loadMacBans(page = 1, filters = {}) {
         console.log('Loading MAC address bans, page:', page, 'filters:', filters);
-        
+
         try {
             this.showMacBansLoading();
-            
+
             const queryParams = new URLSearchParams({
                 page: page.toString(),
                 limit: '50',
@@ -1221,15 +1145,15 @@ class AdminDashboard {
 
             console.log('Fetching MAC bans with params:', queryParams.toString());
 
-            const response = await fetch(`/api/admin/mac-bans?${queryParams}`, {
-                headers: {
-                    'Authorization': `Bearer ${this.token}`
-                }
-            });
+            const response = await fetch(`/api/admin/mac-bans?${queryParams}`);
 
             console.log('MAC bans response status:', response.status);
 
             if (!response.ok) {
+                if (response.status === 401) {
+                    window.location.reload();
+                    return;
+                }
                 const errorText = await response.text();
                 console.error('MAC bans API error:', response.status, errorText);
                 throw new Error(`HTTP error! status: ${response.status}, message: ${errorText}`);
@@ -1237,11 +1161,11 @@ class AdminDashboard {
 
             const data = await response.json();
             console.log('MAC bans data received:', data);
-            
+
             this.cachedMacBans = data.bans;
             this.renderMacBans(data.bans);
             this.updateMacBansPagination(data.pagination);
-            
+
             // Also load stats when loading bans
             await this.loadMacBansStats();
         } catch (error) {
@@ -1254,13 +1178,9 @@ class AdminDashboard {
 
     async loadMacBansStats() {
         console.log('Loading MAC bans stats...');
-        
+
         try {
-            const response = await fetch('/api/admin/mac-bans/stats', {
-                headers: {
-                    'Authorization': `Bearer ${this.token}`
-                }
-            });
+            const response = await fetch('/api/admin/mac-bans/stats');
 
             console.log('MAC bans stats response status:', response.status);
 
@@ -1280,7 +1200,7 @@ class AdminDashboard {
 
     renderMacBans(bans) {
         const tbody = document.getElementById('mac-bans-table-body');
-        
+
         if (!bans || bans.length === 0) {
             tbody.innerHTML = `
                 <tr>
@@ -1297,7 +1217,7 @@ class AdminDashboard {
         tbody.innerHTML = bans.map(ban => {
             const createdDate = new Date(ban.created_at).toLocaleString();
             const isActive = ban.is_active;
-            
+
             return `
                 <tr>
                     <td class="log-timestamp">${ban.mac_address}</td>
@@ -1329,13 +1249,13 @@ class AdminDashboard {
         const prevBtn = document.getElementById('mac-bans-prev-page');
         const nextBtn = document.getElementById('mac-bans-next-page');
         const info = document.getElementById('mac-bans-pagination-info');
-        
+
         if (prevBtn && nextBtn && info) {
             prevBtn.disabled = pagination.currentPage <= 1;
             nextBtn.disabled = pagination.currentPage >= pagination.totalPages;
-            
+
             info.textContent = `Page ${pagination.currentPage} of ${pagination.totalPages} (${pagination.totalBans} total)`;
-            
+
             // Store current pagination state
             this.currentMacBansPage = pagination.currentPage;
             this.totalMacBansPages = pagination.totalPages;
@@ -1413,18 +1333,18 @@ class AdminDashboard {
     getMacBanFilters() {
         const statusFilter = document.getElementById('mac-ban-status-filter')?.value || '';
         const searchFilter = document.getElementById('mac-ban-search-filter')?.value || '';
-        
+
         const filters = {};
         if (statusFilter) filters.status = statusFilter;
         if (searchFilter) filters.search = searchFilter;
-        
+
         return filters;
     }
 
     clearMacBanFilters() {
         const statusFilter = document.getElementById('mac-ban-status-filter');
         const searchFilter = document.getElementById('mac-ban-search-filter');
-        
+
         if (statusFilter) statusFilter.value = '';
         if (searchFilter) searchFilter.value = '';
     }
@@ -1432,10 +1352,10 @@ class AdminDashboard {
     async addMacBan() {
         const form = document.getElementById('add-mac-ban-form');
         const formData = new FormData(form);
-        
+
         const macAddress = formData.get('mac_address').trim();
         const reason = formData.get('reason').trim();
-        
+
         // Validate MAC address format
         if (!this.isValidMacAddress(macAddress)) {
             this.showError('Please enter a valid MAC address (e.g., 00:1B:44:11:3A:B7)');
@@ -1446,8 +1366,7 @@ class AdminDashboard {
             const response = await fetch('/api/admin/mac-bans', {
                 method: 'POST',
                 headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${this.token}`
+                    'Content-Type': 'application/json'
                 },
                 body: JSON.stringify({
                     mac_address: macAddress,
@@ -1462,7 +1381,7 @@ class AdminDashboard {
 
             this.showSuccess('MAC address banned successfully');
             form.reset();
-            
+
             // Clear cache and reload
             this.cachedMacBans = null;
             this.loadMacBans(1);
@@ -1481,7 +1400,7 @@ class AdminDashboard {
 
     deleteMacBan(banId, macAddress) {
         this.deletingMacBanId = banId;
-        
+
         const macPreviewDiv = document.getElementById('mac-ban-preview');
         if (macPreviewDiv) {
             macPreviewDiv.innerHTML = `
@@ -1490,7 +1409,7 @@ class AdminDashboard {
                 </div>
             `;
         }
-        
+
         this.showMacBanDeleteModal();
     }
 
@@ -1516,10 +1435,7 @@ class AdminDashboard {
 
         try {
             const response = await fetch(`/api/admin/mac-bans/${this.deletingMacBanId}`, {
-                method: 'DELETE',
-                headers: {
-                    'Authorization': `Bearer ${this.token}`
-                }
+                method: 'DELETE'
             });
 
             if (!response.ok) {
@@ -1528,7 +1444,7 @@ class AdminDashboard {
 
             this.hideMacBanDeleteModal();
             this.showSuccess('MAC address ban removed successfully');
-            
+
             this.cachedMacBans = null;
             this.loadMacBans(1);
 
@@ -1553,11 +1469,7 @@ class AdminDashboard {
                 ...filters
             });
 
-            const response = await fetch(`/api/admin/mac-bans?${queryParams}`, {
-                headers: {
-                    'Authorization': `Bearer ${this.token}`
-                }
-            });
+            const response = await fetch(`/api/admin/mac-bans?${queryParams}`);
 
             if (!response.ok) {
                 throw new Error(`HTTP error! status: ${response.status}`);
@@ -1573,7 +1485,7 @@ class AdminDashboard {
 
     downloadMacBansAsCSV(bans) {
         const headers = ['MAC Address', 'Reason', 'Banned By', 'Status', 'Created Date'];
-        
+
         const csvContent = [
             headers.join(','),
             ...bans.map(ban => [
@@ -1588,11 +1500,11 @@ class AdminDashboard {
         const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
         const link = document.createElement('a');
         const url = URL.createObjectURL(blob);
-        
+
         link.setAttribute('href', url);
         link.setAttribute('download', `mac-bans-export-${new Date().toISOString().split('T')[0]}.csv`);
         link.style.visibility = 'hidden';
-        
+
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
@@ -1600,7 +1512,7 @@ class AdminDashboard {
 
     showMacBansLoading() {
         const tbody = document.getElementById('mac-bans-table-body');
-        
+
         if (!tbody) return;
 
         tbody.innerHTML = `
@@ -1620,10 +1532,10 @@ class AdminDashboard {
     // Activity Logs functionality
     async loadActivityLogs(page = 1, filters = {}) {
         console.log('Loading activity logs, page:', page, 'filters:', filters);
-        
+
         try {
             this.showLoading();
-            
+
             const queryParams = new URLSearchParams({
                 page: page.toString(),
                 limit: '50',
@@ -1632,15 +1544,15 @@ class AdminDashboard {
 
             console.log('Fetching activity logs with params:', queryParams.toString());
 
-            const response = await fetch(`/api/admin/activity-logs?${queryParams}`, {
-                headers: {
-                    'Authorization': `Bearer ${this.token}`
-                }
-            });
+            const response = await fetch(`/api/admin/activity-logs?${queryParams}`);
 
             console.log('Activity logs response status:', response.status);
 
             if (!response.ok) {
+                if (response.status === 401) {
+                    window.location.reload();
+                    return;
+                }
                 const errorText = await response.text();
                 console.error('Activity logs API error:', response.status, errorText);
                 throw new Error(`HTTP error! status: ${response.status}, message: ${errorText}`);
@@ -1648,10 +1560,10 @@ class AdminDashboard {
 
             const data = await response.json();
             console.log('Activity logs data received:', data);
-            
+
             this.renderActivityLogs(data.logs);
             this.updateLogsPagination(data.pagination);
-            
+
             // Also load stats when loading logs
             await this.loadActivityStats();
         } catch (error) {
@@ -1664,13 +1576,9 @@ class AdminDashboard {
 
     async loadActivityStats() {
         console.log('Loading activity stats...');
-        
+
         try {
-            const response = await fetch('/api/admin/activity-stats', {
-                headers: {
-                    'Authorization': `Bearer ${this.token}`
-                }
-            });
+            const response = await fetch('/api/admin/activity-stats');
 
             console.log('Activity stats response status:', response.status);
 
@@ -1690,7 +1598,7 @@ class AdminDashboard {
 
     renderActivityLogs(logs) {
         const tbody = document.getElementById('logs-table-body');
-        
+
         if (!logs || logs.length === 0) {
             tbody.innerHTML = `
                 <tr>
@@ -1709,7 +1617,7 @@ class AdminDashboard {
             const details = log.details ? JSON.stringify(log.details, null, 2) : '';
             const userAgent = log.user_agent || 'Unknown';
             const ipAddress = log.ip_address || 'Unknown';
-            
+
             return `
                 <tr>
                     <td class="log-timestamp">${timestamp}</td>
@@ -1731,12 +1639,12 @@ class AdminDashboard {
 
     renderActivityStats(stats) {
         document.getElementById('total-logs-count').textContent = stats.totalLogs;
-        
+
         // Find specific action counts
         const createActions = stats.actionStats.find(s => s.action === 'CREATE');
         const updateActions = stats.actionStats.find(s => s.action === 'UPDATE');
         const deleteActions = stats.actionStats.find(s => s.action === 'DELETE');
-        
+
         document.getElementById('create-actions-count').textContent = createActions ? createActions.count : 0;
         document.getElementById('update-actions-count').textContent = updateActions ? updateActions.count : 0;
         document.getElementById('delete-actions-count').textContent = deleteActions ? deleteActions.count : 0;
@@ -1746,12 +1654,12 @@ class AdminDashboard {
         const prevBtn = document.getElementById('logs-prev-page');
         const nextBtn = document.getElementById('logs-next-page');
         const info = document.getElementById('logs-pagination-info');
-        
+
         prevBtn.disabled = pagination.currentPage <= 1;
         nextBtn.disabled = pagination.currentPage >= pagination.totalPages;
-        
+
         info.textContent = `Page ${pagination.currentPage} of ${pagination.totalPages} (${pagination.totalLogs} total)`;
-        
+
         // Store current pagination state
         this.currentLogsPage = pagination.currentPage;
         this.totalLogsPages = pagination.totalPages;
@@ -1800,12 +1708,12 @@ class AdminDashboard {
         const actionFilter = document.getElementById('log-action-filter')?.value || '';
         const entityFilter = document.getElementById('log-entity-filter')?.value || '';
         const userFilter = document.getElementById('log-user-filter')?.value || '';
-        
+
         const filters = {};
         if (actionFilter) filters.action = actionFilter;
         if (entityFilter) filters.entity_type = entityFilter;
         if (userFilter) filters.user_email = userFilter;
-        
+
         return filters;
     }
 
@@ -1823,11 +1731,7 @@ class AdminDashboard {
                 ...filters
             });
 
-            const response = await fetch(`/api/admin/activity-logs?${queryParams}`, {
-                headers: {
-                    'Authorization': `Bearer ${this.token}`
-                }
-            });
+            const response = await fetch(`/api/admin/activity-logs?${queryParams}`);
 
             if (!response.ok) {
                 throw new Error(`HTTP error! status: ${response.status}`);
@@ -1843,7 +1747,7 @@ class AdminDashboard {
 
     downloadLogsAsCSV(logs) {
         const headers = ['Timestamp', 'User Email', 'Action', 'Entity Type', 'Entity ID', 'Details', 'IP Address', 'User Agent'];
-        
+
         const csvContent = [
             headers.join(','),
             ...logs.map(log => [
@@ -1861,11 +1765,11 @@ class AdminDashboard {
         const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
         const link = document.createElement('a');
         const url = URL.createObjectURL(blob);
-        
+
         link.setAttribute('href', url);
         link.setAttribute('download', `activity-logs-${new Date().toISOString().split('T')[0]}.csv`);
         link.style.visibility = 'hidden';
-        
+
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
@@ -1887,22 +1791,18 @@ class AdminDashboard {
         try {
             const filters = this.getCommentFilters();
             let url = '/api/admin/comments';
-            
+
             const queryParams = new URLSearchParams();
             if (filters.postId) queryParams.append('postId', filters.postId);
             if (filters.author) queryParams.append('author', filters.author);
             if (filters.dateRange) queryParams.append('dateRange', filters.dateRange);
             queryParams.append('limit', '10000'); // Large limit for export
-            
+
             if (queryParams.toString()) {
                 url += `?${queryParams.toString()}`;
             }
 
-            const response = await fetch(url, {
-                headers: {
-                    'Authorization': `Bearer ${this.token}`
-                }
-            });
+            const response = await fetch(url);
 
             if (!response.ok) {
                 throw new Error(`HTTP error! status: ${response.status}`);
@@ -1918,7 +1818,7 @@ class AdminDashboard {
 
     downloadCommentsAsCSV(comments) {
         const headers = ['Author', 'Email', 'Comment', 'Post Title', 'Date Created'];
-        
+
         const csvContent = [
             headers.join(','),
             ...comments.map(comment => [
@@ -1933,11 +1833,11 @@ class AdminDashboard {
         const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
         const link = document.createElement('a');
         const url = URL.createObjectURL(blob);
-        
+
         link.setAttribute('href', url);
         link.setAttribute('download', `comments-export-${new Date().toISOString().split('T')[0]}.csv`);
         link.style.visibility = 'hidden';
-        
+
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
@@ -1945,7 +1845,7 @@ class AdminDashboard {
 
     showCommentsLoading() {
         const tbody = document.getElementById('comments-table-body');
-        
+
         if (!tbody) return;
 
         tbody.innerHTML = `
@@ -1964,7 +1864,7 @@ class AdminDashboard {
         const modalContent = modal.querySelector('.modal-content');
         const title = document.getElementById('notification-title');
         const messageElement = document.getElementById('notification-message');
-        
+
         // Set the icon and title based on type
         if (type === 'success') {
             title.innerHTML = '<i class="fas fa-check-circle"></i> Success';
@@ -1976,14 +1876,14 @@ class AdminDashboard {
             title.innerHTML = '<i class="fas fa-info-circle"></i> Notification';
             modalContent.className = 'modal-content notification-modal';
         }
-        
+
         // Set the message
         messageElement.textContent = message;
-        
+
         // Show the modal
         modal.classList.add('active');
         document.body.style.overflow = 'hidden';
-        
+
         // Focus the OK button for accessibility
         setTimeout(() => {
             document.getElementById('notification-close').focus();
@@ -2018,36 +1918,32 @@ class AdminDashboard {
         const loading = document.getElementById('stats-loading');
         const container = document.getElementById('post-stats-container');
         const titleElement = document.getElementById('post-stats-title');
-        
+
         // Show modal and loading
         modal.classList.add('active');
         document.body.style.overflow = 'hidden';
         loading.style.display = 'block';
         container.style.display = 'none';
         titleElement.textContent = `Statistics: ${postTitle}`;
-        
+
         try {
-            const response = await fetch(`/api/analytics/post/${postId}`, {
-                headers: {
-                    'Authorization': `Bearer ${this.token}`
-                }
-            });
+            const response = await fetch(`/api/analytics/post/${postId}`);
 
             if (!response.ok) {
                 throw new Error('Failed to fetch post statistics');
             }
 
             const data = await response.json();
-            
+
             // Store current post stats for PDF export
             this.currentPostStats = data;
             this.currentPostTitle = postTitle;
-            
+
             this.renderPostStats(data);
-            
+
             loading.style.display = 'none';
             container.style.display = 'block';
-            
+
         } catch (error) {
             console.error('Error loading post statistics:', error);
             this.showError('Failed to load post statistics');
@@ -2060,7 +1956,7 @@ class AdminDashboard {
         document.getElementById('total-views').textContent = data.totalViews;
         document.getElementById('video-plays').textContent = data.videoPlays;
         document.getElementById('comments-count').textContent = data.commentsCount;
-        
+
         // Calculate post age
         const postAge = Math.floor((new Date() - new Date(data.post.created_at)) / (1000 * 60 * 60 * 24));
         document.getElementById('post-age').textContent = postAge;
@@ -2069,14 +1965,14 @@ class AdminDashboard {
         this.renderDailyViewsChart(data.dailyViews);
         this.renderHourlyViewsChart(data.hourlyViews);
         this.renderBrowserStatsChart(data.browserStats);
-        
+
         // Render recent activity
         this.renderRecentActivity(data.recentActivity);
     }
 
     renderDailyViewsChart(dailyViews) {
         const ctx = document.getElementById('daily-views-chart').getContext('2d');
-        
+
         // Destroy existing chart if it exists
         if (this.dailyViewsChart) {
             this.dailyViewsChart.destroy();
@@ -2137,7 +2033,7 @@ class AdminDashboard {
 
     renderHourlyViewsChart(hourlyViews) {
         const ctx = document.getElementById('hourly-views-chart').getContext('2d');
-        
+
         // Destroy existing chart if it exists
         if (this.hourlyViewsChart) {
             this.hourlyViewsChart.destroy();
@@ -2149,7 +2045,7 @@ class AdminDashboard {
             hourData[parseInt(item.hour)] = parseInt(item.views);
         });
 
-        const labels = Array.from({length: 24}, (_, i) => `${i}:00`);
+        const labels = Array.from({ length: 24 }, (_, i) => `${i}:00`);
 
         // Check if dark mode is active
         const isDarkMode = document.documentElement.getAttribute('data-theme') === 'dark';
@@ -2201,7 +2097,7 @@ class AdminDashboard {
 
     renderBrowserStatsChart(browserStats) {
         const ctx = document.getElementById('browser-stats-chart').getContext('2d');
-        
+
         // Destroy existing chart if it exists
         if (this.browserStatsChart) {
             this.browserStatsChart.destroy();
@@ -2211,7 +2107,7 @@ class AdminDashboard {
             // Check if dark mode is active for no data message
             const isDarkMode = document.documentElement.getAttribute('data-theme') === 'dark';
             const textColor = isDarkMode ? '#ecf0f1' : '#666';
-            
+
             ctx.font = '16px Arial';
             ctx.fillStyle = textColor;
             ctx.textAlign = 'center';
@@ -2257,7 +2153,7 @@ class AdminDashboard {
 
     renderRecentActivity(recentActivity) {
         const container = document.getElementById('recent-activity');
-        
+
         if (recentActivity.length === 0) {
             container.innerHTML = '<p style="text-align: center; color: #666; padding: 1rem;">No recent activity</p>';
             return;
@@ -2268,7 +2164,7 @@ class AdminDashboard {
             const timeAgo = this.getTimeAgo(date);
             const icon = activity.event_type === 'post_view' ? 'eye' : 'play';
             const actionText = activity.event_type === 'post_view' ? 'Viewed' : 'Video played';
-            
+
             return `
                 <div class="activity-item">
                     <div class="activity-icon">
@@ -2307,7 +2203,7 @@ class AdminDashboard {
     getTimeAgo(date) {
         const now = new Date();
         const diffInSeconds = Math.floor((now - date) / 1000);
-        
+
         if (diffInSeconds < 60) return 'Just now';
         if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)}m ago`;
         if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)}h ago`;
@@ -2318,7 +2214,7 @@ class AdminDashboard {
         const modal = document.getElementById('post-stats-modal');
         modal.classList.remove('active');
         document.body.style.overflow = '';
-        
+
         // Destroy charts to prevent memory leaks
         if (this.dailyViewsChart) {
             this.dailyViewsChart.destroy();
@@ -2353,44 +2249,44 @@ class AdminDashboard {
         try {
             const { jsPDF } = window.jspdf;
             const pdf = new jsPDF();
-            
+
             // Set up PDF document
             pdf.setFontSize(20);
             pdf.setTextColor(44, 62, 80);
             pdf.text('Post Statistics Report', 20, 30);
-            
+
             // Post title
             pdf.setFontSize(16);
             pdf.setTextColor(52, 152, 219);
             pdf.text(`Post: ${this.currentPostTitle}`, 20, 50);
-            
+
             // Post details
             pdf.setFontSize(12);
             pdf.setTextColor(44, 62, 80);
             const post = this.currentPostStats.post;
-            
+
             // Post content summary
             let yPosition = 70;
             pdf.text('Post Content:', 20, yPosition);
             yPosition += 10;
-            
+
             // Clean and truncate post content
             const contentLines = this.wrapText(pdf, this.stripHtml(post.content), 170, 20);
             const maxContentLines = 15; // Limit content to prevent overflow
             const displayLines = contentLines.slice(0, maxContentLines);
-            
+
             displayLines.forEach(line => {
                 pdf.text(line, 20, yPosition);
                 yPosition += 7;
             });
-            
+
             if (contentLines.length > maxContentLines) {
                 pdf.text('... (content truncated)', 20, yPosition);
                 yPosition += 7;
             }
-            
+
             yPosition += 10;
-            
+
             // YouTube video link
             if (post.video_url) {
                 pdf.setTextColor(231, 76, 60);
@@ -2400,13 +2296,13 @@ class AdminDashboard {
                 pdf.text(post.video_url, 20, yPosition);
                 yPosition += 15;
             }
-            
+
             // Statistics overview
             pdf.setFontSize(14);
             pdf.setTextColor(44, 62, 80);
             pdf.text('Statistics Overview:', 20, yPosition);
             yPosition += 15;
-            
+
             pdf.setFontSize(11);
             const stats = [
                 `Total Views: ${this.currentPostStats.totalViews}`,
@@ -2416,25 +2312,25 @@ class AdminDashboard {
                 `Created: ${new Date(post.created_at).toLocaleDateString()}`,
                 `Last Updated: ${new Date(post.updated_at).toLocaleDateString()}`
             ];
-            
+
             stats.forEach(stat => {
                 pdf.text(`• ${stat}`, 25, yPosition);
                 yPosition += 8;
             });
-            
+
             yPosition += 10;
-            
+
             // Recent activity
             if (this.currentPostStats.recentActivity && this.currentPostStats.recentActivity.length > 0) {
                 pdf.setFontSize(14);
                 pdf.setTextColor(44, 62, 80);
                 pdf.text('Recent Activity:', 20, yPosition);
                 yPosition += 15;
-                
+
                 pdf.setFontSize(10);
                 const maxActivities = 10;
                 const activities = this.currentPostStats.recentActivity.slice(0, maxActivities);
-                
+
                 activities.forEach(activity => {
                     const activityText = `• ${activity.type} - ${new Date(activity.timestamp).toLocaleString()}`;
                     if (activity.metadata) {
@@ -2449,7 +2345,7 @@ class AdminDashboard {
                         pdf.text(activityText, 25, yPosition);
                         yPosition += 8;
                     }
-                    
+
                     // Start new page if needed
                     if (yPosition > 260) {
                         pdf.addPage();
@@ -2457,7 +2353,7 @@ class AdminDashboard {
                     }
                 });
             }
-            
+
             // Footer
             const pageCount = pdf.internal.getNumberOfPages();
             for (let i = 1; i <= pageCount; i++) {
@@ -2467,13 +2363,13 @@ class AdminDashboard {
                 pdf.text(`Generated on ${new Date().toLocaleString()}`, 20, 285);
                 pdf.text(`Page ${i} of ${pageCount}`, 170, 285);
             }
-            
+
             // Save the PDF
             const fileName = `post-stats-${this.slugify(this.currentPostTitle)}-${new Date().toISOString().split('T')[0]}.pdf`;
             pdf.save(fileName);
-            
+
             this.showSuccess('PDF report generated successfully!');
-            
+
         } catch (error) {
             console.error('Error generating PDF:', error);
             this.showError('Failed to generate PDF report');
@@ -2482,24 +2378,24 @@ class AdminDashboard {
             exportBtn.innerHTML = '<i class="fas fa-file-pdf"></i> Export PDF';
         }
     }
-    
+
     // Helper method to strip HTML tags
     stripHtml(html) {
         const tmp = document.createElement('div');
         tmp.innerHTML = html;
         return tmp.textContent || tmp.innerText || '';
     }
-    
+
     // Helper method to wrap text for PDF
     wrapText(pdf, text, maxWidth, x) {
         const words = text.split(' ');
         const lines = [];
         let currentLine = '';
-        
+
         words.forEach(word => {
             const testLine = currentLine + (currentLine ? ' ' : '') + word;
             const testWidth = pdf.getTextWidth(testLine);
-            
+
             if (testWidth > maxWidth && currentLine) {
                 lines.push(currentLine);
                 currentLine = word;
@@ -2507,14 +2403,14 @@ class AdminDashboard {
                 currentLine = testLine;
             }
         });
-        
+
         if (currentLine) {
             lines.push(currentLine);
         }
-        
+
         return lines;
     }
-    
+
     // Helper method to create URL-friendly slugs
     slugify(text) {
         return text
@@ -2532,13 +2428,13 @@ window.AdminDashboard = AdminDashboard;
 // This will be called by the AuthManager when authentication is confirmed
 document.addEventListener('DOMContentLoaded', () => {
     // Don't initialize here - let auth.js handle initialization after login
-    
+
     // Add global error handler to catch any issues
     window.addEventListener('error', (event) => {
         console.error('Global error caught:', event.error);
         console.error('Error occurred in:', event.filename, 'at line', event.lineno);
     });
-    
+
     window.addEventListener('unhandledrejection', (event) => {
         console.error('Unhandled promise rejection:', event.reason);
     });
