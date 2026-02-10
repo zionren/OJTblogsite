@@ -1,4 +1,5 @@
 const express = require('express');
+const path = require('path');
 const cors = require('cors');
 const helmet = require('helmet');
 const cookieParser = require('cookie-parser');
@@ -50,6 +51,10 @@ app.get('/admin', (req, res) => {
 });
 app.get('/about', (req, res) => {
     res.redirect('/about.html');
+});
+
+app.get('/post/:slug', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'post.html'));
 });
 
 // Routes
